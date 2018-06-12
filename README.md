@@ -96,7 +96,7 @@ GridDB Server need to be started in advance.
 - trigger, affinity
 
 Please refer to the following files for more detailed information.  
-- [Node.JS Client API Reference](https://griddb.github.io/go_client/NodejsAPIReference.htm)
+- [Node.JS Client API Reference](https://griddb.github.io/nodejs_client/NodejsAPIReference.htm)
 
 Note:
 1. The current API might be changed in the next version. e.g. ContainerInfo()
