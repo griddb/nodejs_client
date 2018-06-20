@@ -15,7 +15,7 @@ CPPFLAGS = -fPIC -std=c++0x -g -O2
 INCLUDES = -Iinclude -Isrc
 
 INCLUDES_JS = $(INCLUDES)
-INCLUDES_JS += -I$(HOME)/.nvm/versions/node/v6.14.2/include/node
+INCLUDES_JS += -I/usr/include/node
 
 CPPFLAGS_JS   = $(CPPFLAGS) $(INCLUDES_JS)	\
 				-DNODE_GYP_MODULE_NAME=griddb	\
