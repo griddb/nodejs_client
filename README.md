@@ -35,7 +35,7 @@ Install SWIG as below.
 
 Install Node.js v6.
 
-Change lib of nodejs in Makefile to path of node.h in nvm (.nvm/versions/node/v6.x.x/include/node/)
+If required, change INCLUDES_JS path in Makefile.
 
 Install gcc 4.8 as below.
 
