@@ -444,13 +444,13 @@ static void cleanStringArray(GSChar** arrString, size_t size) {
 %fragment("convertObjectToStringArray", "header",
         fragment = "cleanStringArray") {
 static GSChar** convertObjectToStringArray(v8::Local<v8::Value> value, int* size) {
-    GSChar** arrString;
+    GSChar** arrString = NULL;
     size_t arraySize;
     int alloc = 0;
     char* v;
     v8::Local<v8::Array> arr;
     if(!value->IsArray()) {
-        return false;
+        return NULL;
     }
     arr = v8::Local<v8::Array>::Cast(value);
     arraySize = (int) arr->Length();
