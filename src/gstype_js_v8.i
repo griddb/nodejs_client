@@ -21,6 +21,7 @@
 #define UTC_TIMESTAMP_MAX 253402300799.999
 
 %{
+#include <Field.h>
 #include <ctime>
 #include <limits>
 %}
@@ -30,7 +31,6 @@
 /*
  * ignore unnecessary functions
  */
-%ignore griddb::Row;
 %ignore griddb::Container::getGSTypeList;
 %ignore griddb::Container::getColumnCount;
 %ignore griddb::RowSet::next_row;
