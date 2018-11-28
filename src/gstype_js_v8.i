@@ -1082,10 +1082,10 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 }
 
 %fragment("convertObjectToGSRowField", "header", fragment = "SWIG_AsCharPtrAndSize",
-        fragment = "checkPyObjIsStr", fragment = "convertObjToStr", fragment = "convertObjectToDouble",
-        fragment = "convertObjectToGSTimestamp", fragment = "SWIG_AsVal_bool",
-        fragment = "convertObjectToBool", fragment = "double_equals", 
-        fragment = "convertObjectToFloat", fragment = "convertObjectToStringArray") {
+        fragment = "convertObjectToDouble", fragment = "convertObjectToGSTimestamp", 
+        fragment = "SWIG_AsVal_bool", fragment = "convertObjectToBool", 
+        fragment = "double_equals", fragment = "convertObjectToFloat", 
+        fragment = "convertObjectToStringArray") {
     static bool convertObjectToGSRowField(GSRow *row, int column, v8::Local<v8::Value> value, GSType type) {
         int8_t byteVal;
         int16_t shortVal;
@@ -1094,7 +1094,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
         float floatVal;
         double doubleVal;
         GSChar* stringVal;
-
+        char* stringValChar;
         GSBlob blobVal;
         GSBool boolVal;
         GSTimestamp timestampVal;
@@ -1118,7 +1118,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
         char* v = 0;
         bool vbool;
         int alloc;
-        int i;
+        int i, length;
         v8::Local<v8::Array> arr;
         GSResult ret;
         GSChar *mydata;
@@ -1137,15 +1137,16 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
         switch(type) {
             case (GS_TYPE_STRING):
                 if (!value->IsString()) {
-                 return false;
+                    return false;
                 }
-                res = SWIG_AsCharPtrAndSize(value, &stringVal, &size, &alloc);
+                res = SWIG_AsCharPtrAndSize(value, &stringValChar, &size, &alloc);
                 if (!SWIG_IsOK(res)) {
                     return false;
                 }
+                stringVal = stringValChar;
                 ret = gsSetRowFieldByString(row, column, stringVal);
                 if (alloc == SWIG_NEWOBJ) {
-                    %delete_array(stringVal);
+                    %delete_array(stringValChar);
                 }
                 break;
             case (GS_TYPE_LONG):
@@ -1234,13 +1235,14 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 }
                 break;
             case (GS_TYPE_STRING_ARRAY):
-                stringArrVal = convertObjectToStringArray(value, (int*)&size);
-                if (!stringArrVal) {
+                stringArrVal = convertObjectToStringArray(value, &length);
+                if (stringArrVal == NULL) {
                     return false;
                 }
+                size = length;
                 ret = gsSetRowFieldByStringArray(row, column, stringArrVal, size);
                 if (stringArrVal) {
-                    for (i = 0; i < size; i++) {
+                    for (i = 0; i < length; i++) {
                         if (stringArrVal[i]) {
                             free(const_cast<GSChar*> (stringArrVal[i]));
                         }
@@ -1248,7 +1250,6 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                     free(const_cast<GSChar**> (stringArrVal));
                 }
                 break;
-                
             case (GS_TYPE_GEOMETRY):
                 if (!value->IsString()) {
                  return false;
@@ -1360,6 +1361,10 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 free ((void*) shortArrVal);
                 break;
             case GS_TYPE_LONG_ARRAY:
+                if(!value->IsArray()) {
+                    return false;
+                }
+                arr = v8::Local<v8::Array>::Cast(value);
                 size = (int) arr->Length();
                 longArrVal = (int64_t *) malloc(size * sizeof(int64_t));
                 if (longArrVal == NULL) {
@@ -1449,7 +1454,6 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
         return (ret == GS_RESULT_OK);
     }
 }
-
 
 /**
 * Typemaps for put_container() function
