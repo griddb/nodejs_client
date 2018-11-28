@@ -1862,23 +1862,22 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 /*
 * typemap for get_row
 */
-%typemap(in, fragment = "convertObjectToFieldWithType") (griddb::Field* keyFields) {
+%typemap(in, fragment = "convertObjectToFieldWithType") (griddb::Field* keyFields)(griddb::Field field) {
+    $1 = &field;
     if ($input->IsNull() || $input->IsUndefined()) {
-        $1 = NULL;
+%#if GS_COMPATIBILITY_SUPPORT_3_5
+        $1->type = GS_TYPE_NULL;
+%#else
+        SWIG_V8_Raise("Not support for NULL");
+        SWIG_fail;
+%#endif
     } else {
         GSType* typeList = arg1->getGSTypeList();
         GSType type = typeList[0];
-        $1 = (griddb::Field *)malloc(sizeof(griddb::Field));
-        if(!convertObjectToFieldWithType(*$1, $input, type)) {
+        if (!convertObjectToFieldWithType(*$1, $input, type)) {
             SWIG_V8_Raise("can not convert to row filed");
             SWIG_fail;
         }
-    }
-}
-
-%typemap(freearg) (griddb::Field* keyFields) {
-    if($1) {
-        free((void*)$1);
     }
 }
 
@@ -2105,36 +2104,28 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
 /**
  * Create typemap for RowKeyPredicate.set_range
  */
-%typemap(in, fragment= "convertObjectToFieldWithType") (griddb::Field* startKey) {
-    griddb::Field* startKey1 = (griddb::Field*) malloc(sizeof(griddb::Field));
-    GSType type = arg1->get_key_type();
-    if(!(convertObjectToFieldWithType(*startKey1, $input, type))) {
-        SWIG_V8_Raise("Can not create row based on input");
+%typemap(in, fragment= "convertObjectToFieldWithType") (griddb::Field* startKey)(griddb::Field field) {
+    $1 = &field;
+    if ($1 == NULL) {
+        SWIG_V8_Raise("Memory allocation error");
         SWIG_fail;
     }
-    $1 = startKey1;
-}
-
-%typemap(freearg) (griddb::Field* startKey) {
-    if($1) {
-        free((void*)$1);
+    GSType type = arg1->get_key_type();
+    if (!(convertObjectToFieldWithType(*$1, $input, type))) {
+        %variable_fail(1, "String", "can not create row based on input");
     }
 }
 
-%typemap(in, fragment= "convertObjectToFieldWithType") (griddb::Field* finishKey ) {
-    griddb::Field* finishKey1 = (griddb::Field *) malloc(sizeof(griddb::Field));
-    GSType type = arg1->get_key_type();
-
-    if(!(convertObjectToFieldWithType(*finishKey1, $input, type))) {
-        SWIG_V8_Raise("Can not create row based on input");
+%typemap(in, fragment= "convertObjectToFieldWithType") (griddb::Field* finishKey)(griddb::Field field) {
+    $1 = &field;
+    if ($1 == NULL) {
+        SWIG_V8_Raise("Memory allocation error");
         SWIG_fail;
     }
-    $1 = finishKey1;
-}
 
-%typemap(freearg) (griddb::Field* finishKey) {
-    if($1) {
-        free((void*)$1);
+    GSType type = arg1->get_key_type();
+    if (!(convertObjectToFieldWithType(*$1, $input, type))) {
+        %variable_fail(1, "String", "can not create row based on input");
     }
 }
 
