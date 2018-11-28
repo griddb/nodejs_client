@@ -81,180 +81,9 @@
     SWIGV8_THROW_EXCEPTION(SWIG_V8_NewPointerObj(SWIG_as_voidptr(new griddb::GSException(&$1)), $descriptor(griddb::GSException *), SWIG_POINTER_OWN));
 %}
 
-/*
-* fragment to support converting data for GSRow
-*/
-%fragment("convertFieldToObject", "header") {
-static v8::Handle<v8::Value> convertFieldToObject(griddb::Field &field) {
-    int listSize, i;
-    void* arrayPtr;
-    v8::Local<v8::Array> vals;
-    switch (field.type) {
-    case GS_TYPE_BLOB:
-        return SWIGV8_STRING_NEW2((GSChar *)field.value.asBlob.data, field.value.asBlob.size);
-    case GS_TYPE_BOOL:
-        return SWIGV8_BOOLEAN_NEW((bool)field.value.asBool);
-    case GS_TYPE_INTEGER:
-        return SWIGV8_INT32_NEW(field.value.asInteger);
-    case GS_TYPE_BYTE:
-        return SWIGV8_INT32_NEW(field.value.asByte);
-    case GS_TYPE_SHORT:
-        return SWIGV8_INT32_NEW(field.value.asShort);
-    case GS_TYPE_LONG:
-        return SWIGV8_NUMBER_NEW(field.value.asLong);
-    case GS_TYPE_FLOAT:
-        return SWIGV8_NUMBER_NEW(field.value.asFloat);
-    case GS_TYPE_DOUBLE:
-        return SWIGV8_NUMBER_NEW(field.value.asDouble);
-    case GS_TYPE_STRING:
-        return SWIGV8_STRING_NEW(field.value.asString);
-    case GS_TYPE_TIMESTAMP:
-%#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-        return v8::Date::New(field.value.asTimestamp);
-%#else
-        return v8::Date::New(v8::Isolate::GetCurrent(), field.value.asTimestamp);
-%#endif
-%#if GS_COMPATIBILITY_SUPPORT_3_5
-    case GS_TYPE_NULL:
-        return SWIGV8_NULL();
-%#endif
-    case GS_TYPE_INTEGER_ARRAY:
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-        listSize = field.value.asIntegerArray.size;
-        arrayPtr = (void*) field.value.asIntegerArray.elements;
-%#else
-        listSize = field.value.asArray.length;
-        arrayPtr = (void*) field.value.asArray.elements.asInteger;
-%#endif
-
-        vals = SWIGV8_ARRAY_NEW();
-        for (i = 0; i < listSize; i++) {
-            vals->Set(i, SWIG_From_int(*((int32_t *)arrayPtr + i)));
-        }
-        return vals;
-
-    case GS_TYPE_STRING_ARRAY:
-        GSChar** arrString;
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-        listSize = field.value.asStringArray.size;
-        arrString = (GSChar**) field.value.asStringArray.elements;
-%#else
-        listSize = field.value.asArray.length;
-        arrString = (GSChar**) field.value.asArray.elements.asString;
-%#endif
-        vals = SWIGV8_ARRAY_NEW();
-        for (i = 0; i < listSize; i++) {
-            vals->Set(i, SWIGV8_STRING_NEW(((GSChar **)arrString)[i]));
-        }
-        return vals;
-
-    case GS_TYPE_BOOL_ARRAY:
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-        listSize = field.value.asBoolArray.size;
-        arrayPtr = (void*) field.value.asBoolArray.elements;
-%#else
-        listSize = field.value.asArray.length;
-        arrayPtr = (void*) field.value.asArray.elements.asBool;
-%#endif
-        vals = SWIGV8_ARRAY_NEW();
-        for (i = 0; i < listSize; i++) {
-            vals->Set(i, SWIG_From_bool(*((bool *)arrayPtr + i)));
-        }
-        return vals;
-    case GS_TYPE_BYTE_ARRAY:
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-        listSize = field.value.asByteArray.size;
-        arrayPtr = (void*) field.value.asByteArray.elements;
-%#else
-        listSize = field.value.asArray.length;
-        arrayPtr = (void*) field.value.asArray.elements.asByte;
-%#endif
-        vals = SWIGV8_ARRAY_NEW();
-        for (i = 0; i < listSize; i++) {
-            vals->Set(i, SWIG_From_int(*((int8_t *)arrayPtr + i)));
-        }
-        return vals;
-    case GS_TYPE_SHORT_ARRAY:
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-        listSize = field.value.asShortArray.size;
-        arrayPtr = (void*) field.value.asShortArray.elements;
-%#else
-        listSize = field.value.asArray.length;
-        arrayPtr = (void*) field.value.asArray.elements.asShort;
-%#endif
-        vals = SWIGV8_ARRAY_NEW();
-        for (i = 0; i < listSize; i++) {
-            vals->Set(i, SWIG_From_int(*((int16_t *)arrayPtr + i)));
-        }
-        return vals;
-    case GS_TYPE_LONG_ARRAY:
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-        listSize = field.value.asLongArray.size;
-        arrayPtr = (void*) field.value.asLongArray.elements;
-%#else
-        listSize = field.value.asArray.length;
-        arrayPtr = (void*) field.value.asArray.elements.asLong;
-%#endif
-        vals = SWIGV8_ARRAY_NEW();
-        for (i = 0; i < listSize; i++) {
-            vals->Set(i, SWIGV8_NUMBER_NEW(((int64_t *)arrayPtr)[i]));
-        }
-        return vals;
-    case GS_TYPE_FLOAT_ARRAY:
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-        listSize = field.value.asFloatArray.size;
-        arrayPtr = (void*) field.value.asFloatArray.elements;
-%#else
-        listSize = field.value.asArray.length;
-        arrayPtr = (void*) field.value.asArray.elements.asFloat;
-%#endif
-        vals = SWIGV8_ARRAY_NEW();
-        for (i = 0; i < listSize; i++) {
-            vals->Set(i, SWIGV8_NUMBER_NEW(((float *)arrayPtr)[i]));
-        }
-        return vals;
-    case GS_TYPE_DOUBLE_ARRAY:
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-        listSize = field.value.asDoubleArray.size;
-        arrayPtr = (void*) field.value.asDoubleArray.elements;
-%#else
-        listSize = field.value.asArray.length;
-        arrayPtr = (void*) field.value.asArray.elements.asDouble;
-%#endif
-        vals = SWIGV8_ARRAY_NEW();
-        for (i = 0; i < listSize; i++) {
-            vals->Set(i, SWIGV8_NUMBER_NEW(((double *)arrayPtr)[i]));
-        }
-        return vals;
-    case GS_TYPE_TIMESTAMP_ARRAY:
-
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-        listSize = field.value.asTimestampArray.size;
-        arrayPtr = (void*) field.value.asTimestampArray.elements;
-%#else
-        listSize = field.value.asArray.length;
-        arrayPtr = (void*) field.value.asArray.elements.asTimestamp;
-%#endif
-        vals = SWIGV8_ARRAY_NEW();
-        for (i = 0; i < listSize; i++) {
-%#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-            vals->Set(i, v8::Date::New(((GSTimestamp *)arrayPtr)[i]));
-%#else
-            vals->Set(i, v8::Date::New(v8::Isolate::GetCurrent(), ((GSTimestamp *)arrayPtr)[i]));
-%#endif
-        }
-        return vals;
-    default:
-        return SWIGV8_NULL();
-    }
-
-    return SWIGV8_NULL();
-}
-}
-
-%fragment("convertGSRowFieldToObject", "header",
+%fragment("convertFieldToObject", "header",
         fragment = "convertTimestampToObject") {
-static v8::Handle<v8::Value> convertGSRowFieldToObject(GSRow *row, int column, bool timestamp_to_float = true) {
+static v8::Handle<v8::Value> convertFieldToObject(GSValue* value, GSType type, bool timestamp_to_float = true) {
 
     size_t size;
     const int8_t *byteArrVal;
@@ -269,41 +98,40 @@ static v8::Handle<v8::Value> convertGSRowFieldToObject(GSRow *row, int column, b
     v8::Local<v8::Array> list;
     int i;
 
-    GSValue mValue;
-    GSType mType;
-    GSResult ret = gsGetRowFieldGeneral(row, column, &mValue, &mType);
-    switch (mType) {
+    switch (type) {
         case GS_TYPE_LONG:
-            return SWIGV8_NUMBER_NEW(mValue.asLong);
+            return SWIGV8_NUMBER_NEW(value->asLong);
         case GS_TYPE_STRING:
-            return SWIGV8_STRING_NEW(mValue.asString);
+            return SWIGV8_STRING_NEW(value->asString);
 %#if GS_COMPATIBILITY_SUPPORT_3_5
         case GS_TYPE_NULL:
             return SWIGV8_NULL();
 %#endif
         case GS_TYPE_BLOB:
-            return SWIGV8_STRING_NEW2((GSChar *)mValue.asBlob.data, mValue.asBlob.size);
+            return SWIGV8_STRING_NEW2((GSChar *)value->asBlob.data, value->asBlob.size);
         case GS_TYPE_BOOL:
-            return SWIGV8_BOOLEAN_NEW((bool)mValue.asBool);
+            return SWIGV8_BOOLEAN_NEW((bool)value->asBool);
         case GS_TYPE_INTEGER:
-            return SWIGV8_INT32_NEW(mValue.asInteger);
+            return SWIGV8_INT32_NEW(value->asInteger);
         case GS_TYPE_FLOAT:
-            return SWIGV8_NUMBER_NEW(mValue.asFloat);
+            return SWIGV8_NUMBER_NEW(value->asFloat);
         case GS_TYPE_DOUBLE:
-            return SWIGV8_NUMBER_NEW(mValue.asDouble);
+            return SWIGV8_NUMBER_NEW(value->asDouble);
         case GS_TYPE_TIMESTAMP:
-            return convertTimestampToObject(&mValue.asTimestamp, timestamp_to_float);
+            return convertTimestampToObject(&value->asTimestamp, timestamp_to_float);
         case GS_TYPE_BYTE:
-            return SWIGV8_INT32_NEW(mValue.asByte);
+            return SWIGV8_INT32_NEW(value->asByte);
         case GS_TYPE_SHORT:
-            return SWIGV8_INT32_NEW(mValue.asShort);
+            return SWIGV8_INT32_NEW(value->asShort);
+        case GS_TYPE_GEOMETRY:
+            return SWIGV8_STRING_NEW(value->asGeometry);
         case GS_TYPE_INTEGER_ARRAY:
 %#if GS_COMPATIBILITY_VALUE_1_1_106
-            size = mValue.asIntegerArray.size;
-            intArrVal = mValue.asIntegerArray.elements;
+            size = value->asIntegerArray.size;
+            intArrVal = value->asIntegerArray.elements;
 %#else
-            size = mValue.asArray.length;
-            intArrVal = mValue.asArray.elements.asInteger;
+            size = value->asArray.length;
+            intArrVal = value->asArray.elements.asInteger;
 %#endif
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
@@ -312,11 +140,11 @@ static v8::Handle<v8::Value> convertGSRowFieldToObject(GSRow *row, int column, b
             return list;
         case GS_TYPE_STRING_ARRAY:
 %#if GS_COMPATIBILITY_VALUE_1_1_106
-            size = mValue.asStringArray.size;
-            stringArrVal = mValue.asStringArray.elements;
+            size = value->asStringArray.size;
+            stringArrVal = value->asStringArray.elements;
 %#else
-            size = mValue.asArray.length;
-            stringArrVal = mValue.asArray.elements.asString;
+            size = value->asArray.length;
+            stringArrVal = value->asArray.elements.asString;
 %#endif
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
@@ -325,11 +153,11 @@ static v8::Handle<v8::Value> convertGSRowFieldToObject(GSRow *row, int column, b
             return list;
         case GS_TYPE_BOOL_ARRAY:
 %#if GS_COMPATIBILITY_VALUE_1_1_106
-            size = mValue.asBoolArray.size;
+            size = value->asBoolArray.size;
             boolArrVal = field.value.asBoolArray.elements;
 %#else
-            size = mValue.asArray.length;
-            boolArrVal = mValue.asArray.elements.asBool;
+            size = value->asArray.length;
+            boolArrVal = value->asArray.elements.asBool;
 %#endif
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
@@ -338,11 +166,11 @@ static v8::Handle<v8::Value> convertGSRowFieldToObject(GSRow *row, int column, b
             return list;
         case GS_TYPE_BYTE_ARRAY:
 %#if GS_COMPATIBILITY_VALUE_1_1_106
-            size = mValue.asByteArray.size;
-            byteArrVal = mValue.asByteArray.elements;
+            size = value->asByteArray.size;
+            byteArrVal = value->asByteArray.elements;
 %#else
-            size = mValue.asArray.length;
-            byteArrVal = mValue.asArray.elements.asByte;
+            size = value->asArray.length;
+            byteArrVal = value->asArray.elements.asByte;
 %#endif
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
@@ -351,11 +179,11 @@ static v8::Handle<v8::Value> convertGSRowFieldToObject(GSRow *row, int column, b
             return list;
         case GS_TYPE_SHORT_ARRAY:
 %#if GS_COMPATIBILITY_VALUE_1_1_106
-            size = mValue.asShortArray.size;
-            shortArrVal = mValue.asShortArray.elements;
+            size = value->asShortArray.size;
+            shortArrVal = value->asShortArray.elements;
 %#else
-            size = mValue.asArray.length;
-            shortArrVal = mValue.asArray.elements.asShort;
+            size = value->asArray.length;
+            shortArrVal = value->asArray.elements.asShort;
 %#endif
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
@@ -364,11 +192,11 @@ static v8::Handle<v8::Value> convertGSRowFieldToObject(GSRow *row, int column, b
             return list;
         case GS_TYPE_LONG_ARRAY:
 %#if GS_COMPATIBILITY_VALUE_1_1_106
-            size = mValue.asLongArray.size;
-            longArrVal = mValue.asLongArray.elements;
+            size = value->asLongArray.size;
+            longArrVal = value->asLongArray.elements;
 %#else
-            size = mValue.asArray.length;
-            longArrVal = mValue.asArray.elements.asLong;
+            size = value->asArray.length;
+            longArrVal = value->asArray.elements.asLong;
 %#endif
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
@@ -377,11 +205,11 @@ static v8::Handle<v8::Value> convertGSRowFieldToObject(GSRow *row, int column, b
             return list;
         case GS_TYPE_FLOAT_ARRAY:
 %#if GS_COMPATIBILITY_VALUE_1_1_106
-            size = mValue.asFloatArray.size;
-            floatArrVal = mValue.asFloatArray.elements;
+            size = value->asFloatArray.size;
+            floatArrVal = value->asFloatArray.elements;
 %#else
-            size = mValue.asArray.length;
-            floatArrVal = mValue.asArray.elements.asFloat;
+            size = value->asArray.length;
+            floatArrVal = value->asArray.elements.asFloat;
 %#endif
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
@@ -390,11 +218,11 @@ static v8::Handle<v8::Value> convertGSRowFieldToObject(GSRow *row, int column, b
             return list;
         case GS_TYPE_DOUBLE_ARRAY:
 %#if GS_COMPATIBILITY_VALUE_1_1_106
-            size = mValue.asDoubleArray.size;
-            doubleArrVal = mValue.asDoubleArray.elements;
+            size = value->asDoubleArray.size;
+            doubleArrVal = value->asDoubleArray.elements;
 %#else
-            size = mValue.asArray.length;
-            doubleArrVal = mValue.asArray.elements.asDouble;
+            size = value->asArray.length;
+            doubleArrVal = value->asArray.elements.asDouble;
 %#endif
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
@@ -403,19 +231,17 @@ static v8::Handle<v8::Value> convertGSRowFieldToObject(GSRow *row, int column, b
             return list;
         case GS_TYPE_TIMESTAMP_ARRAY:
 %#if GS_COMPATIBILITY_VALUE_1_1_106
-            size = mValue.asTimestampArray.size;
-            timestampArrVal = mValue.asTimestampArray.elements;
+            size = value->asTimestampArray.size;
+            timestampArrVal = value->asTimestampArray.elements;
 %#else
-            size = mValue.asArray.length;
-            timestampArrVal = mValue.asArray.elements.asTimestamp;
+            size = value->asArray.length;
+            timestampArrVal = value->asArray.elements.asTimestamp;
 %#endif
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
                 list->Set(i, convertTimestampToObject((GSTimestamp*)&(timestampArrVal[i]), timestamp_to_float));
             }
             return list;
-        case GS_TYPE_GEOMETRY:
-            return SWIGV8_STRING_NEW(mValue.asGeometry);
         default:
             return SWIGV8_NULL();
     }
@@ -423,7 +249,6 @@ static v8::Handle<v8::Value> convertGSRowFieldToObject(GSRow *row, int column, b
     return SWIGV8_NULL();
 }
 }
-
 
 %fragment("cleanStringArray", "header") {
 static void cleanStringArray(GSChar** arrString, size_t size) {
@@ -1801,7 +1626,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     $1 = &tmpAgValue;
 }
 %typemap(argout, fragment = "convertFieldToObject") (griddb::Field *agValue) {
-    $result = convertFieldToObject(tmpAgValue$argnum);
+    $result = convertFieldToObject(&$1->value, $1->type, arg1->timestamp_output_with_float);
 }
 
 /**
@@ -1884,19 +1709,29 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 %typemap(freearg) (GSRow *rowdata) {
 }
 
-%typemap(argout, fragment = "convertGSRowFieldToObject") (GSRow *rowdata) (v8::Local<v8::Array> obj, v8::Handle<v8::Value> val)%{
+%typemap(argout, fragment = "convertFieldToObject") (GSRow *rowdata) (v8::Local<v8::Array> obj, v8::Handle<v8::Value> val)%{
     GSRow* row;
     row = arg1->getGSRowPtr();
+    GSValue mValue;
+    GSType mType;
+    GSResult ret
 #if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
     obj = v8::Array::New(arg1->getColumnCount());
 #else
     obj = v8::Array::New(v8::Isolate::GetCurrent(), arg1->getColumnCount());
 #endif
-    for(int i = 0; i < arg1->getColumnCount(); i++) {
-        obj->Set(i, convertGSRowFieldToObject(row, i, arg1->timestamp_output_with_float));
+    for (int i = 0; i < arg1->getColumnCount(); i++) {
+        ret = gsGetRowFieldGeneral(row, i, &mValue, &mType);
+        if (ret != GS_RESULT_OK) {
+            char errorMsg[60];
+            sprintf(errorMsg, "Can't get data for field %d", i);
+            SWIG_V8_Raise(errorMsg);
+            SWIG_fail;
+        }
+        obj->Set(i, convertFieldToObject(&mValue, mType, arg1->timestamp_output_with_float));
     }
     $result = obj;
-%}
+}
 
 
 /**
@@ -2063,11 +1898,14 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
     $3 = &tmpcolNumList;
 }
 
-%typemap(argout) (GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList) 
+%typemap(argout, fragment = "convertFieldToObject") (GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList) 
 (v8::Local<v8::Object> obj, v8::Local<v8::Array> arr, v8::Local<v8::Array> rowArr,
 v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
     obj = SWIGV8_OBJECT_NEW();
     int numContainer = (int) *$2;
+    GSValue mValue;
+    GSType mType;
+    GSResult ret;
     for(int i = 0; i < numContainer; i++) {
         key = SWIGV8_STRING_NEW2((*$1)[i].containerName, strlen((char*)(*$1)[i].containerName));
 
@@ -2084,8 +1922,15 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
 %#else
             rowArr = v8::Array::New(v8::Isolate::GetCurrent(), (int)(*$3)[i]);
 %#endif
-            for(int k = 0; k < (*$3)[i]; k++) {
-                rowArr->Set(k, convertGSRowFieldToObject(row, k, arg1->timestamp_output_with_float));
+            for (int k = 0; k < (*$3)[i]; k++) {
+                ret = gsGetRowFieldGeneral(row, k, &mValue, &mType);
+                if (ret != GS_RESULT_OK) {
+                    char errorMsg[60];
+                    sprintf(errorMsg, "Can't get data for field %d", k);
+                    SWIG_V8_Raise(errorMsg);
+                    SWIG_fail;
+                }
+                rowArr->Set(k, convertFieldToObject(&mValue, mType, arg1->timestamp_output_with_float));
             }
             arr->Set(j, rowArr);
         }
@@ -2141,8 +1986,8 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
 %#else
     arr = v8::Array::New(v8::Isolate::GetCurrent(), length);
 %#endif
-    arr->Set(0,convertFieldToObject(startKeyTmp$argnum));
-    arr->Set(1,convertFieldToObject(finishKeyTmp$argnum));
+    arr->Set(0,convertFieldToObject(&$1->value, $1->type, arg1->timestamp_output_with_float));
+    arr->Set(1,convertFieldToObject(&$2->value, $2->type, arg1->timestamp_output_with_float));
     $result = arr;
 }
 
@@ -2196,7 +2041,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
     obj = v8::Array::New(v8::Isolate::GetCurrent(), keyCount1$argnum);
 %#endif
     for (int i = 0; i < keyCount1$argnum; i++) {
-        v8::Handle<v8::Value> value = convertFieldToObject(keys1$argnum[i]);
+        v8::Handle<v8::Value> value = convertFieldToObject(&keys1$argnum[i].value, keys1$argnum[i].type, arg1->timestamp_output_with_float);
         obj->Set(i, value);
     }
     $result = obj;
@@ -2306,12 +2151,15 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
 
 %typemap(argout, fragment = "convertFieldToObject") (GSRowSetType* type, bool* hasNextRow,
         griddb::QueryAnalysisEntry** queryAnalysis, griddb::AggregationResult** aggResult) 
-    (v8::Local<v8::Array> obj, v8::Handle<v8::Value> value, GSRow* row){
+    (v8::Local<v8::Array> obj, v8::Handle<v8::Value> value){
+    GSRow* row;
+    GSValue mValue;
+    GSType mType;
+    GSResult ret;
     switch(typeTmp$argnum) {
         case (GS_ROW_SET_CONTAINER_ROWS):
             if (hasNextRowTmp$argnum == false) {
                 SWIGV8_NULL();
-//                return;
             } else {
                 row = arg1->getGSRowPtr();
 %#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
@@ -2323,8 +2171,15 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
                     SWIG_V8_Raise("Memory allocation error");
                     SWIG_fail;
                 }
-                for(int i = 0; i < arg1->getColumnCount(); i++) {
-                    obj->Set(i, convertGSRowFieldToObject(row, i, arg1->timestamp_output_with_float));
+                for (int i = 0; i < arg1->getColumnCount(); i++) {
+                    ret = gsGetRowFieldGeneral(row, i, &mValue, &mType);
+                    if (ret != GS_RESULT_OK) {
+                        char errorMsg[60];
+                        sprintf(errorMsg, "Can't get data for field %d", i);
+                        SWIG_V8_Raise(errorMsg);
+                        SWIG_fail;
+                    }
+                    obj->Set(i, convertFieldToObject(&mValue, mType, arg1->timestamp_output_with_float));
                 }
                 $result = obj;
             }
@@ -2345,7 +2200,6 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
             SWIG_fail;
             break;
     }
-    //return $result;
 }
 
 //attribute ContainerInfo::column_info_list
