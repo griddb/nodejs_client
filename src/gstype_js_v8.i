@@ -1806,7 +1806,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
 
 //attribute ContainerInfo::column_info_list
 %typemap(in) (ColumnInfoList*) 
-        (v8::Local<v8::Array> arr, v8::Local<v8::Array> colInfo, v8::Local<v8::Array> keys, size_t sizeTmp = 0, int* alloc = 0, int res, char* v = 0) {
+        (v8::Local<v8::Array> arr, v8::Local<v8::Array> colInfo, v8::Local<v8::Array> keys, size_t sizeTmp = 0, int* alloc = 0, int res, char* v = 0, ColumnInfoList infolist) {
 
     if(!$input->IsArray()) {
         SWIG_V8_Raise("Expected array as input");
@@ -1815,7 +1815,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
     v8::Local<v8::Array> arr = v8::Local<v8::Array>::Cast($input);
     size_t len = (size_t)arr->Length();
     GSColumnInfo* containerInfo;
-    $1 = (ColumnInfoList*) malloc(sizeof(ColumnInfoList));
+    $1 = &infolist;
     if(len) {
         containerInfo = (GSColumnInfo*) malloc(len * sizeof(GSColumnInfo));
         alloc = (int*) malloc(len*sizeof(int));
