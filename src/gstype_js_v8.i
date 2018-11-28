@@ -621,19 +621,6 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     float floatTimestamp;
     double utcTimestamp;
     if (value->IsDate()) {
-        // Input is Python utc datetime object
-//        year = PyDateTime_GET_YEAR(value);
-//        month = PyDateTime_GET_MONTH(value);
-//        day = PyDateTime_GET_DAY(value);
-//        hour = PyDateTime_DATE_GET_HOUR(value);
-//        minute = PyDateTime_DATE_GET_MINUTE(value);
-//        second = PyDateTime_DATE_GET_SECOND(value);
-//        milliSecond = PyDateTime_DATE_GET_MICROSECOND(value)/1000;
-//        sprintf(s, "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ", year, month, day, hour, minute, second, milliSecond);
-//        retConvertTimestamp = gsParseTime(s, timestamp);
-//        if (retConvertTimestamp == GS_FALSE) {
-//            return false;
-//        }
         *timestamp = value->NumberValue();
         return true;
     } else if (value->IsString()) {
@@ -662,13 +649,6 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 
         return (retConvertTimestamp == GS_TRUE);
     } else if (value->IsNumber()) {
-        // Input is python utc timestamp
-        //utcTimestamp = PyFloat_AsDouble(value);
-//        vbool = convertObjectToDouble(value, &utcTimestamp);
-//        if (!vbool) {
-//            return false;
-//        }
-//        *timestamp = utcTimestamp * 1000;
         *timestamp = value->NumberValue();
         if (utcTimestamp > UTC_TIMESTAMP_MAX) {
             return false;
