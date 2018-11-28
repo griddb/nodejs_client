@@ -555,12 +555,12 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     }
 }
 
-%fragment("convertObjectToGSRowField", "header", fragment = "SWIG_AsCharPtrAndSize",
+%fragment("convertToFieldWithType", "header", fragment = "SWIG_AsCharPtrAndSize",
         fragment = "convertObjectToDouble", fragment = "convertObjectToGSTimestamp", 
         fragment = "SWIG_AsVal_bool", fragment = "convertObjectToBool", 
         fragment = "double_equals", fragment = "convertObjectToFloat", 
         fragment = "convertObjectToStringArray") {
-    static bool convertObjectToGSRowField(GSRow *row, int column, v8::Local<v8::Value> value, GSType type) {
+    static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> value, GSType type) {
         int8_t byteVal;
         int16_t shortVal;
         int32_t intVal;
@@ -1281,7 +1281,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 /**
 * Typemaps for put_row() function
 */
-%typemap(in, fragment= "convertObjectToGSRowField") (GSRow* row) {
+%typemap(in, fragment= "convertToFieldWithType") (GSRow* row) {
     if(!$input->IsArray()) {
         SWIG_V8_Raise("Expected array as input");
         SWIG_fail;
@@ -1293,7 +1293,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     GSType* typeList = arg1->getGSTypeList();
     for(int i = 0; i < leng; i++) {
         GSType type = typeList[i];
-        if(!(convertObjectToGSRowField(tmpRow, i, arr->Get(i), type))) {
+        if(!(convertToFieldWithType(tmpRow, i, arr->Get(i), type))) {
             %variable_fail(1, "String", "can not create row based on input");
         }
     }
@@ -1302,7 +1302,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 /**
 * Typemaps for put_row() function
 */
-%typemap(in, fragment="convertObjectToGSRowField") (GSRow *rowContainer) {
+%typemap(in, fragment="convertToFieldWithType") (GSRow *rowContainer) {
     if(!$input->IsArray()) {
         SWIG_V8_Raise("Expected array as input");
         SWIG_fail;
@@ -1320,7 +1320,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     row = arg1->getGSRowPtr();
     for(int i = 0; i < leng; i++) {
         type = typeList[i];
-        if(!(convertObjectToGSRowField(row, i, arr->Get(i), type))) {
+        if(!(convertToFieldWithType(row, i, arr->Get(i), type))) {
             char errorMsg[60];
             sprintf(errorMsg, "Invalid value for column %d, type should be : %d", i, type);
             SWIG_V8_Raise(errorMsg);
@@ -1448,7 +1448,7 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0){
                 int rowLen = (int) rowArr->Length();
                 int k;
                 for(k = 0; k < rowLen; k++) {
-                    if (!(convertObjectToGSRowField($1[i][j], k, rowArr->Get(k), typeArr[k]))) {
+                    if (!(convertToFieldWithType($1[i][j], k, rowArr->Get(k), typeArr[k]))) {
                         char errorMsg[60];
                         sprintf(errorMsg, "Invalid value for column %d, type should be : %d", k, typeArr[k]);
                         SWIG_V8_Raise(errorMsg);
@@ -1702,7 +1702,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
 /**
  * Typemap for Container::multi_put
  */
-%typemap(in, fragment="convertObjectToGSRowField") (GSRow** listRowdata, int rowCount){
+%typemap(in, fragment="convertToFieldWithType") (GSRow** listRowdata, int rowCount){
     if(!$input->IsArray()) {
         SWIG_V8_Raise("Expected array as input");
         SWIG_fail;
@@ -1730,7 +1730,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
             }
             for(int k = 0; k < length; k++) {
                 GSType type = typeList[k];
-                if (!(convertObjectToGSRowField($1[i], k, fieldArr->Get(k), type))) {
+                if (!(convertToFieldWithType($1[i], k, fieldArr->Get(k), type))) {
                     $2 = i+1;
                     char errorMsg[200];
                     sprintf(errorMsg, "Invalid value for row %d, column %d, type should be : %d", i, k, type);
