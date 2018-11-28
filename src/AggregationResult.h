@@ -18,7 +18,7 @@
 #define _AGGREGATIONRESULT_H_
 
 #include "GSException.h"
-#include "Row.h"
+#include "Field.h"
 #include "gridstore.h"
 
 using namespace std;

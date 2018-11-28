@@ -135,14 +135,12 @@ namespace griddb {
     /**
      * Put row to database.
      */
-    bool Container::put(Row *rowContainer) {
+    bool Container::put(GSRow *rowContainer) {
         GSBool bExists;
-        rowContainer->set_for_row(mRow, mContainerInfo);
         GSResult ret = gsPutRow(mContainer, NULL, mRow, &bExists);
         if (ret != GS_RESULT_OK) {
             throw GSException(mContainer, ret);
         }
-
         return bExists;
     }
 
@@ -210,7 +208,7 @@ namespace griddb {
     /**
      * Returns the content of a Row.
      */
-    GSBool Container::get(Field* keyFields, Row *rowdata) {
+    GSBool Container::get(Field* keyFields, GSRow *rowdata) {
         GSBool exists;
         GSResult ret;
         void *key = NULL;
@@ -251,10 +249,6 @@ namespace griddb {
         ret = gsGetRow(mContainer, key, mRow, &exists);
         if (ret != GS_RESULT_OK) {
             throw GSException(mContainer, ret);
-        }
-
-        if(exists) {
-            rowdata->set_from_row(mRow);
         }
 
         return exists;
@@ -318,29 +312,12 @@ namespace griddb {
     /**
      * Multiput data
      */
-    void Container::multi_put(Row** listRowdata, int rowCount) {
+    void Container::multi_put(GSRow** listRowdata, int rowCount) {
         GSResult ret;
         GSBool bExists;
-        GSRow** rowObjs = (GSRow**) malloc(rowCount * sizeof(GSRow *));
-
-        for (int i = 0; i < rowCount; i++) {
-            GSRow *gsrow;
-            gsCreateRowByContainer(mContainer, &gsrow);
-            Row* tmpRow = listRowdata[i];
-            tmpRow->set_for_row(gsrow, NULL);
-            rowObjs[i] = gsrow;
-        }
-
         //data for each container
-        ret = gsPutMultipleRows(mContainer, (const void * const *) rowObjs,
+        ret = gsPutMultipleRows(mContainer, (const void * const *) listRowdata,
                 rowCount, &bExists);
-
-        for (int rowNum = 0; rowNum < rowCount; rowNum++) {
-            GSRow* gsRow = (GSRow *) rowObjs[rowNum];
-            gsCloseRow(&gsRow);
-        }
-
-        free((void*) rowObjs);
         if (ret != GS_RESULT_OK) {
             throw GSException(mContainer, ret);
         }
@@ -377,6 +354,10 @@ namespace griddb {
             }
         }
         return typeList;
+    }
+
+    GSRow* Container::getGSRowPtr(){
+        return mRow;
     }
 
     /**

@@ -85,7 +85,7 @@ namespace griddb {
             containerName = strdup(name);
         }
 
-        mContainerInfo = {containerName, type, propsCount, columnInfoList, rowKeyAssigned};
+        mContainerInfo = {containerName, type, (size_t)propsCount, columnInfoList, rowKeyAssigned};
         if (timeProps != NULL) {
             mContainerInfo.timeSeriesProperties = timeProps;
         }

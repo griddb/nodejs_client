@@ -17,7 +17,7 @@
 #ifndef _CONTAINER_H_
 #define _CONTAINER_H_
 
-#include "Row.h"
+#include "Field.h"
 #include "Query.h"
 
 using namespace std;
@@ -41,18 +41,19 @@ class Container {
         GSContainerType get_type();
         void create_index(const char* column_name, GSIndexTypeFlags index_type = GS_INDEX_FLAG_DEFAULT, const char* name=NULL);
         void drop_index(const char* column_name, GSIndexTypeFlags index_type = GS_INDEX_FLAG_DEFAULT, const char* name=NULL);
-        bool put(Row *rowContainer);
+        bool put(GSRow  *rowContainer);
         Query* query(const char *query);
         void abort();
         void flush();
         void set_auto_commit(bool enabled);
         void commit();
-        GSBool get(Field* keyFields, Row *rowdata);
+        GSBool get(Field* keyFields, GSRow  *rowdata);
         bool remove(Field* keyFields);
-        void multi_put(Row** listRowdata, int rowCount);
+        void multi_put(GSRow** listRowdata, int rowCount);
         GSContainer* getGSContainerPtr();
         GSType* getGSTypeList();
         int getColumnCount();
+        GSRow* getGSRowPtr();
 
     private:
         Container(GSContainer *container, GSContainerInfo* containerInfo);

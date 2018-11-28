@@ -30,7 +30,6 @@ namespace griddb {
 
 class Store {
     GSGridStore *mStore;
-    map<string, griddb::Container*> mContainerList;
 
     friend class StoreFactory;
 
@@ -44,11 +43,10 @@ class Store {
         void drop_container(const char *name);
 
         void fetch_all(GSQuery* const * queryList, size_t queryCount);
-        void multi_put(Row*** listRow, const int *listRowContainerCount,
+        void multi_put(GSRow*** listRow, const int *listRowContainerCount,
                 const char ** listContainerName, size_t containerCount);
         void multi_get(const GSRowKeyPredicateEntry* const * predicateList,
-                size_t predicateCount,  std::vector<griddb::Row*> *listRow, size_t **listRowContainerCount,
-                char*** listContainerName, size_t* containerCount);
+                size_t predicateCount, GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList);
 
         ContainerInfo* get_container_info(const char *name);
         PartitionController* partition_info();

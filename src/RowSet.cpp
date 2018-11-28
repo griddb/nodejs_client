@@ -65,8 +65,7 @@ namespace griddb {
     /**
      * Update current row from RowSet
      */
-    void RowSet::update(Row* row) {
-        row->set_for_row(mRow);
+    void RowSet::update(GSRow* row) {
         GSResult ret = gsUpdateCurrentRow(mRowSet, mRow);
 
         if (ret != GS_RESULT_OK) {
@@ -76,25 +75,24 @@ namespace griddb {
     /**
      * Get next row data. Convert from gsGetNextRow.
      */
-    void RowSet::next_row(Row* rowdata, bool* hasNextRow) {
+    void RowSet::next_row(bool* hasNextRow) {
         *hasNextRow = this->has_next();
         if (*hasNextRow) {
             GSResult ret = gsGetNextRow(mRowSet, mRow);
             if (ret != GS_RESULT_OK) {
                 throw GSException(mRowSet, ret);
             }
-            rowdata->set_from_row(mRow);
         }
     }
     /**
      * Get next row
      */
-    void RowSet::next(GSRowSetType* type, Row* row, bool* hasNextRow,
+    void RowSet::next(GSRowSetType* type, bool* hasNextRow,
             QueryAnalysisEntry** queryAnalysis, AggregationResult** aggResult){
         *type = this->type();
         switch(*type) {
         case (GS_ROW_SET_CONTAINER_ROWS):
-            this->next_row(row, hasNextRow);
+            this->next_row(hasNextRow);
             break;
         case (GS_ROW_SET_AGGREGATION_RESULT):
             *hasNextRow = this->has_next();
@@ -189,6 +187,10 @@ namespace griddb {
      */
     int RowSet::getColumnCount(){
         return mContainerInfo->columnCount;
+    }
+
+    GSRow* RowSet::getGSRowPtr(){
+        return mRow;
     }
 
 }
