@@ -31,12 +31,12 @@
  * ignore unnecessary functions
  */
 %ignore griddb::Row;
-%ignore griddb::TimeSeriesProperties;
-%ignore griddb::TimestampUtils::parse;
-%ignore griddb::TimestampUtils::current;
-%ignore griddb::TimestampUtils::format_time;
-%ignore griddb::TimestampUtils::add_time;
+%ignore griddb::Container::getGSTypeList;
+%ignore griddb::Container::getColumnCount;
 %ignore griddb::RowSet::next_row;
+%ignore griddb::RowSet::get_next_query_analysis;
+%ignore griddb::RowSet::get_next_aggregation;
+%ignore griddb::ContainerInfo::ContainerInfo(GSContainerInfo* containerInfo);
 
 /*
  * Use attribute in Nodejs
