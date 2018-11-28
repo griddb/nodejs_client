@@ -1181,11 +1181,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 
 %typemap(argout,numinputs=0) (const GSChar *const ** stringList, size_t *size)
 (v8::Local<v8::Array> arr, v8::Handle<v8::String> val) {
-%#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-    arr = v8::Array::New(size1$argnum);
-%#else
-    arr = v8::Array::New(v8::Isolate::GetCurrent(), size1$argnum);
-%#endif
+    arr = SWIGV8_ARRAY_NEW();
     for(int i = 0; i < size1$argnum; i++) {
         val = SWIGV8_STRING_NEW2(nameList1$argnum[i], strlen(nameList1$argnum[i]));
         arr->Set(i, val);
@@ -1201,11 +1197,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 
 %typemap(argout,numinputs=0) (const int **intList, size_t *size)
 (v8::Local<v8::Array> arr, v8::Handle<v8::Integer> val) {
-%#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-    arr = v8::Array::New(size1$argnum);
-%#else
-    arr = v8::Array::New(v8::Isolate::GetCurrent(), size1$argnum);
-%#endif
+    arr = SWIGV8_ARRAY_NEW();
     for(int i = 0; i < size1$argnum; i++) {
         val = SWIGV8_INTEGER_NEW(intList1$argnum[i]);
         arr->Set(i, val);
@@ -1221,11 +1213,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 
 %typemap(argout,numinputs=0) (const long **longList, size_t *size)
 (v8::Local<v8::Array> arr, v8::Handle<v8::Number> val) {
-%#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-    arr = v8::Array::New(size1$argnum);
-%#else
-    arr = v8::Array::New(v8::Isolate::GetCurrent(), size1$argnum);
-%#endif
+    arr = SWIGV8_ARRAY_NEW();
     for(int i = 0; i < size1$argnum; i++) {
         val = SWIGV8_NUMBER_NEW(longList1$argnum[i]);
         arr->Set(i, val);
@@ -1363,12 +1351,8 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     row = arg1->getGSRowPtr();
     GSValue mValue;
     GSType mType;
-    GSResult ret
-#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-    obj = v8::Array::New(arg1->getColumnCount());
-#else
-    obj = v8::Array::New(v8::Isolate::GetCurrent(), arg1->getColumnCount());
-#endif
+    GSResult ret;
+    obj = SWIGV8_ARRAY_NEW();
     for (int i = 0; i < arg1->getColumnCount(); i++) {
         ret = gsGetRowFieldGeneral(row, i, &mValue, &mType);
         if (ret != GS_RESULT_OK) {
@@ -1381,7 +1365,6 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     }
     $result = obj;
 }
-
 
 /**
  * Typemaps for Store.multi_put
@@ -1555,22 +1538,13 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
     GSValue mValue;
     GSType mType;
     GSResult ret;
-    for(int i = 0; i < numContainer; i++) {
+    for (int i = 0; i < numContainer; i++) {
         key = SWIGV8_STRING_NEW2((*$1)[i].containerName, strlen((char*)(*$1)[i].containerName));
-
-%#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-        arr = v8::Array::New((int)(*$1)[i].rowCount);
-%#else
-        arr = v8::Array::New(v8::Isolate::GetCurrent(), (int)(*$1)[i].rowCount);
-%#endif
+        arr = SWIGV8_ARRAY_NEW();
     
-        for(int j = 0; j < (*$1)[i].rowCount; j++) {
+        for (int j = 0; j < (*$1)[i].rowCount; j++) {
             row = (GSRow*)(*$1)[i].rowList[j];
-%#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-            rowArr = v8::Array::New((int)(*$3)[i]);
-%#else
-            rowArr = v8::Array::New(v8::Isolate::GetCurrent(), (int)(*$3)[i]);
-%#endif
+            rowArr = SWIGV8_ARRAY_NEW();
             for (int k = 0; k < (*$3)[i]; k++) {
                 ret = gsGetRowFieldGeneral(row, k, &mValue, &mType);
                 if (ret != GS_RESULT_OK) {
@@ -1586,6 +1560,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
         obj->Set(key, arr);
     }
     $result = obj;
+    delete (*$3);
 }
 
 /**
@@ -1625,13 +1600,8 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
 }
 
 %typemap(argout, fragment="convertFieldToObject") (griddb::Field* startField, griddb::Field* finishField) {
-    int length = 2;
-    v8::Local<v8::Array> arr;// = v8::Array::New(length);
-%#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-    arr = v8::Array::New(length);
-%#else
-    arr = v8::Array::New(v8::Isolate::GetCurrent(), length);
-%#endif
+    v8::Local<v8::Array> arr;
+    arr = SWIGV8_ARRAY_NEW();
     arr->Set(0,convertFieldToObject(&$1->value, $1->type, arg1->timestamp_output_with_float));
     arr->Set(1,convertFieldToObject(&$2->value, $2->type, arg1->timestamp_output_with_float));
     $result = arr;
@@ -1681,11 +1651,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
 
 %typemap(argout,numinputs=0, fragment="convertFieldToObject") (griddb::Field **keys, size_t* keyCount) {
     v8::Local<v8::Array> obj;
-%#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-    obj = v8::Array::New(keyCount1$argnum);
-%#else
-    obj = v8::Array::New(v8::Isolate::GetCurrent(), keyCount1$argnum);
-%#endif
+    obj = SWIGV8_ARRAY_NEW();
     for (int i = 0; i < keyCount1$argnum; i++) {
         v8::Handle<v8::Value> value = convertFieldToObject(&keys1$argnum[i].value, keys1$argnum[i].type, arg1->timestamp_output_with_float);
         obj->Set(i, value);
@@ -1759,13 +1725,8 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
 }
 
 %typemap(argout) (GSQueryAnalysisEntry* queryAnalysis){
-    const int size = 6;
     v8::Local<v8::Array> obj;
-%#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-    obj = v8::Array::New(size);
-%#else
-    obj = v8::Array::New(v8::Isolate::GetCurrent(), size);
-%#endif
+    obj = SWIGV8_ARRAY_NEW();
     obj->Set(0, SWIGV8_INTEGER_NEW($1->id));
     obj->Set(1, SWIGV8_INTEGER_NEW($1->depth));
     v8::Handle<v8::String> str = SWIGV8_STRING_NEW2($1->type, strlen((char*)$1->type));
@@ -1808,11 +1769,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
                 SWIGV8_NULL();
             } else {
                 row = arg1->getGSRowPtr();
-%#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-                obj = v8::Array::New(rowTmp$argnum.get_count());
-%#else
-                obj = v8::Array::New(v8::Isolate::GetCurrent(), rowTmp$argnum.get_count());
-%#endif
+                obj = SWIGV8_ARRAY_NEW();
                 if(obj->IsNull()) {
                     SWIG_V8_Raise("Memory allocation error");
                     SWIG_fail;
@@ -1937,34 +1894,21 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
     v8::Local<v8::Array> obj;
     size_t len = $1->size;
     if (len > 0) {
-%#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-        obj = v8::Array::New(len);
-%#else
-        obj = v8::Array::New(v8::Isolate::GetCurrent(), len);
-%#endif
+        obj = SWIGV8_ARRAY_NEW();
         if(obj->IsNull()) {
             SWIG_V8_Raise("Memory allocation error");
             SWIG_fail;
         }
         for (int i = 0; i < len; i++) {
             v8::Local<v8::Array> prop;
-%#if GS_COMPATIBILITY_SUPPORT_3_5
-%#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-            prop = v8::Array::New(3);
-%#else
-            prop = v8::Array::New(v8::Isolate::GetCurrent(), 3);
-%#endif
-            prop->Set(2, SWIGV8_NUMBER_NEW($1->columnInfo[i].options));
-%#else
-%#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
-            prop = v8::Array::New(2);
-%#else
-            prop = v8::Array::New(v8::Isolate::GetCurrent(), 2);
-%#endif
-%#endif
+            prop = SWIGV8_ARRAY_NEW();
+
             v8::Handle<v8::String> str = SWIGV8_STRING_NEW2($1->columnInfo[i].name, strlen((char*)$1->columnInfo[i].name));
             prop->Set(0, str);
             prop->Set(1, SWIGV8_NUMBER_NEW($1->columnInfo[i].type));
+%#if GS_COMPATIBILITY_SUPPORT_3_5
+            prop->Set(2, SWIGV8_NUMBER_NEW($1->columnInfo[i].options));
+%#endif
             obj->Set(i, prop);
         }
     }
