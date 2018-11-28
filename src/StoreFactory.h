@@ -40,7 +40,7 @@ class StoreFactory {
         ~StoreFactory();
         void close(GSBool allRelated);
         static StoreFactory* get_instance();
-        Store* get_store(const char* host=NULL, int32_t port=NULL, const char* cluster_name=NULL,
+        Store* get_store(const char* host=NULL, int32_t port=0, const char* cluster_name=NULL,
                 const char* database=NULL, const char* username=NULL, const char* password=NULL,
                 const char* notification_member=NULL, const char* notification_provider=NULL);
         void set_properties(const GSPropertyEntry* props, int propsCount);
