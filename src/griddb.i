@@ -77,6 +77,7 @@
 #include "RowKeyPredicate.h"
 #include "Store.h"
 #include "StoreFactory.h"
+#include "EnumValue.h"
 %}
 
 #if defined(SWIGPYTHON)
@@ -109,3 +110,4 @@
 %include "RowKeyPredicate.h"
 %include "Store.h"
 %include "StoreFactory.h"
+%include "EnumValue.h"
