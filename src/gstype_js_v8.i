@@ -14,10 +14,6 @@
    limitations under the License.
 */
 
-#define BYTE_MIN -128
-#define BYTE_MAX 127
-#define SHORT_MIN -32768
-#define SHORT_MAX 32767
 #define UTC_TIMESTAMP_MAX 253402300799.999
 
 %{
@@ -487,22 +483,18 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 }
 
 /**
- * Support covert Field from Nodejs object to C Object with specific type
+ * Support convert row key Field from NodeJS object to C Object with specific type
  */
-%fragment("convertObjectToFieldWithType", "header", fragment = "SWIG_AsCharPtrAndSize"
+%fragment("convertToRowKeyFieldWithType", "header", fragment = "SWIG_AsCharPtrAndSize"
         , fragment = "convertObjectToBool", fragment = "convertObjectToGSTimestamp"
         ,fragment = "convertObjectToDouble"
         , fragment = "convertObjectToStringArray") {
-    static bool convertObjectToFieldWithType(griddb::Field &field, v8::Local<v8::Value> value, GSType type) {
+    static bool convertToRowKeyFieldWithType(griddb::Field &field, v8::Local<v8::Value> value, GSType type) {
         size_t size = 0;
         int res;
         char* v = 0;
         bool vbool;
-        int *alloc = (int*) malloc(sizeof(int));
-        if(alloc == NULL) {
-            return false;
-        }
-        memset(alloc, 0, sizeof(int));
+        int alloc;
 
         field.type = type;
         if (value->IsNull() || value->IsUndefined()) {
@@ -510,74 +502,34 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
             field.type = GS_TYPE_NULL;
             return true;
 %#else
-			return false;
+            return false;
 %#endif
         }
         GSChar *mydata;
         void *blobData;
         int year, month, day, hour, minute, second, milliSecond;
-        char s[30];
         int checkConvert = 0;
         GSBool retConvertTimestamp;
-        GSChar** arrString = NULL;
-        int arraySize, i;
-        void* arrayPtr;
         int tmpInt;
-        v8::Local<v8::Array> arr;
-        double tmpDouble; //support convert to double, double array
-        float tmpFloat; //support convert to float, float array
-        int32_t *intArr;
-        GSBool *boolArr;
-        int8_t* byteArr;
-        int16_t* shortArr;
-        int64_t* longArr;
-        float* floatArr;
-        double* doubleArr;
-        GSTimestamp* timestampArr;
-        int fixSize;
-        switch(type) {
+
+        switch (type) {
             case (GS_TYPE_STRING):
                 if (!value->IsString()) {
                     return false;
                 }
-                res = SWIG_AsCharPtrAndSize(value, &v, &size, alloc);
+                res = SWIG_AsCharPtrAndSize(value, &v, &size, &alloc);
                 if (!SWIG_IsOK(res)) {
                    return false;
                 }
-                mydata = (GSChar*)malloc(sizeof(GSChar) * size + 1);
-                memset(mydata, 0x0, sizeof(GSChar) * size + 1);
-                memcpy(mydata, v, size);
-                field.value.asString = mydata;
-                field.type = GS_TYPE_STRING;
-                break;
-
-            case (GS_TYPE_BOOL):
-                vbool = convertObjectToBool(value, (bool*) &field.value.asBool);
-                if (!vbool) {
-                    return false;
+                //mydata = (GSChar*)malloc(sizeof(GSChar) * size + 1);
+                //memset(mydata, 0x0, sizeof(GSChar) * size + 1);
+                //memcpy(mydata, v, size);
+                //field.value.asString = mydata;
+                //field.type = GS_TYPE_STRING;
+                if (v && size) {
+                    field.value.asString = (alloc == SWIG_NEWOBJ) ? v : %new_copy_array(v, size, GSChar);
                 }
                 break;
-
-            case (GS_TYPE_BYTE):
-                if (!value->IsInt32()) {
-                    return false;
-                }
-                if (value->IntegerValue() < BYTE_MIN || value->IntegerValue() > BYTE_MAX) {
-                    return false;
-                }
-                field.value.asByte = value->IntegerValue();
-                break;
-
-            case (GS_TYPE_SHORT):
-                if (!value->IsInt32()) {
-                    return false;
-                }
-                if (value->IntegerValue() < SHORT_MIN || value->IntegerValue() > SHORT_MAX) {
-                    return false;
-                }
-                field.value.asShort = value->IntegerValue();
-                break;
-
             case (GS_TYPE_INTEGER):
                 if (!value->IsInt32()) {
                     return false;
@@ -591,312 +543,9 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                     return false;
                 }
                 break;
-
-            case (GS_TYPE_FLOAT):
-                    vbool = convertObjectToFloat(value, &tmpFloat);
-                    if (!vbool) {
-                        return false;
-                    }
-                    field.value.asFloat = tmpFloat;
-                break;
-
-            case (GS_TYPE_DOUBLE):
-                    vbool = convertObjectToDouble(value, &tmpDouble);
-                    if (!vbool) {
-                        return false;
-                    }
-                    field.value.asDouble = tmpDouble;
-                break;
-
             case (GS_TYPE_TIMESTAMP):
                 return convertObjectToGSTimestamp(value, &field.value.asTimestamp);
                 break;
-            case (GS_TYPE_BLOB):
-                if(!value->IsString()) {
-                    return false;
-                }
-                res = SWIG_AsCharPtrAndSize(value, &v, &size, alloc);
-                if (!SWIG_IsOK(res)) {
-                   return false;
-                }
-                fixSize = size - 1;
-                mydata = (GSChar*)malloc(sizeof(GSChar) * fixSize);
-                memcpy(mydata, v, fixSize);
-                field.value.asBlob.data = mydata;
-                field.value.asBlob.size = fixSize;
-                break;
-            case (GS_TYPE_INTEGER_ARRAY):
-                if(!value->IsArray()) {
-                    return false;
-                }
-                arr = v8::Local<v8::Array>::Cast(value);
-                arraySize = (int) arr->Length();
-                arrayPtr = NULL;
-                intArr = (int32_t *) malloc(arraySize * sizeof(int32_t));
-                if (intArr == NULL) {
-                    return false;
-                }
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                field.value.asIntegerArray.size = arraySize;
-                field.value.asIntegerArray.elements = (const int32_t *) intArr;
-%#else
-                field.value.asArray.length = arraySize;
-                field.value.asArray.elements.asInteger = (const int32_t *) intArr;
-%#endif
-                for (i = 0; i < arraySize; i++) {
-                    checkConvert = SWIG_AsVal_int(arr->Get(i), (intArr + i));
-                    if (!SWIG_IsOK(checkConvert)) {
-                        free((void*)intArr);
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                        field.value.asIntegerArray.elements = NULL;
-%#else
-                        field.value.asArray.elements.asInteger = NULL;
-%#endif
-                        return false;
-                    }
-                }
-                break;
-            case (GS_TYPE_GEOMETRY):
-                return false;
-                break;
-            case (GS_TYPE_STRING_ARRAY):
-                arrString = convertObjectToStringArray(value, &arraySize);
-                if (!arrString) {
-                    return false;
-                }
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                field.value.asStringArray.size = arraySize;
-                field.value.asStringArray.elements = arrString;
-%#else
-                field.value.asArray.length = arraySize;
-                field.value.asArray.elements.asString = arrString;
-%#endif
-                break;
-            case (GS_TYPE_BOOL_ARRAY):
-                if(!value->IsArray()) {
-                    return false;
-                }
-                arr = v8::Local<v8::Array>::Cast(value);
-                arraySize = (int) arr->Length();
-                arrayPtr = NULL;
-                boolArr = (GSBool *) malloc(arraySize * sizeof(GSBool));
-                if (boolArr == NULL) {
-                    return false;
-                }
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                field.value.asBoolArray.size = arraySize;
-                field.value.asBoolArray.elements = (const GSBool *) boolArr;
-%#else
-                field.value.asArray.length = arraySize;
-                field.value.asArray.elements.asBool = (const GSBool *) boolArr;
-%#endif
-                for (i = 0; i < arraySize; i++) {
-                    vbool = convertObjectToBool(arr->Get(i), (bool*)(boolArr + i));
-                    if (!vbool) {
-                        free((void*)boolArr);
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                        field.value.asBoolArray.elements = NULL:
-%#else
-                        field.value.asArray.elements.asBool = NULL;
-%#endif
-                        return false;
-                    }
-                }
-                break;
-            case (GS_TYPE_BYTE_ARRAY):
-                if(!value->IsArray()) {
-                    return false;
-                }
-                arr = v8::Local<v8::Array>::Cast(value);
-                arraySize = (int) arr->Length();
-                arrayPtr = NULL;
-                byteArr = (int8_t *) malloc(arraySize * sizeof(int8_t));
-                if (byteArr == NULL) {
-                    return false;
-                }
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                field.value.asByteArray.size = arraySize;
-                field.value.asByteArray.elements = (const int8_t *) byteArr;
-%#else
-                field.value.asArray.length = arraySize;
-                field.value.asArray.elements.asByte = (const int8_t *) byteArr;
-%#endif
-                for (i = 0; i < arraySize; i++) {
-
-                    checkConvert = SWIG_AsVal_int(arr->Get(i), &tmpInt);
-                    byteArr[i] = (int8_t)tmpInt;
-                     if (!SWIG_IsOK(checkConvert) ||
-                        tmpInt < std::numeric_limits<int8_t>::min() ||
-                        tmpInt > std::numeric_limits<int8_t>::max()) {
-                         free((void*)byteArr);
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                        field.value.asByteArray.elements = NULL;
-%#else
-                        field.value.asArray.elements.asByte = NULL;
-%#endif
-                        return false;
-                    }
-                }
-                break;
-            case (GS_TYPE_SHORT_ARRAY):
-                if(!value->IsArray()) {
-                    return false;
-                }
-                arr = v8::Local<v8::Array>::Cast(value);
-                arraySize = (int) arr->Length();
-                arrayPtr = NULL;
-                shortArr = (int16_t *) malloc(arraySize * sizeof(int16_t));
-                if (shortArr == NULL) {
-                    return false;
-                }
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                field.value.asShortArray.size = arraySize;
-                field.value.asShortArray.elements = (const int16_t *) shortArr;
-%#else
-                field.value.asArray.length = arraySize;
-                field.value.asArray.elements.asShort = shortArr;
-%#endif
-                for (i = 0; i < arraySize; i++) {
-                    checkConvert = SWIG_AsVal_int(arr->Get(i), &tmpInt);
-                    shortArr[i] = (int16_t)tmpInt;
-                    if (!SWIG_IsOK(checkConvert) ||
-                        tmpInt < std::numeric_limits<int16_t>::min() ||
-                        tmpInt > std::numeric_limits<int16_t>::max()) {
-                        free((void*)shortArr);
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                        field.value.asShortArray.elements = NULL;
-%#else
-                        field.value.asArray.elements.asShort = NULL;
-%#endif
-                        return false;
-                    }
-                }
-                break;
-            case (GS_TYPE_LONG_ARRAY):
-                if(!value->IsArray()) {
-                    return false;
-                }
-                arr = v8::Local<v8::Array>::Cast(value);
-                arraySize = (int) arr->Length();
-                arrayPtr = NULL;
-                longArr = (int64_t *) malloc(arraySize * sizeof(int64_t));
-                if (longArr == NULL) {
-                    return false;
-                }
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                field.value.asLongArray.size = arraySize;
-                field.value.asLongArray.elements = (const int64_t *) longArr;
-%#else
-                field.value.asArray.length = arraySize;
-                field.value.asArray.elements.asLong = longArr;
-%#endif
-                for (i = 0; i < arraySize; i++) {
-                    checkConvert = SWIG_AsVal_long(arr->Get(i), ((int64_t *)longArr + i));
-                    if (!SWIG_IsOK(checkConvert) ) {
-                        free((void*) longArr);
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                        field.value.asLongArray.elements = NULL;
-%#else
-                        field.value.asArray.elements.asLong = NULL;
-%#endif
-                        return false;
-                    }
-                }
-                break;
-            case (GS_TYPE_FLOAT_ARRAY):
-                float* floatPtr;
-                if(!value->IsArray()) {
-                    return false;
-                }
-                arr = v8::Local<v8::Array>::Cast(value);
-                arraySize = (int) arr->Length();
-                arrayPtr = NULL;
-                floatArr = (float *) malloc(arraySize * sizeof(float));
-                if (floatArr == NULL) {
-                    return false;
-                }
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                field.value.asFloatArray.size = arraySize;
-                field.value.asFloatArray.elements = (const float *) floatArr;
-%#else
-                field.value.asArray.length = arraySize;
-                field.value.asArray.elements.asFloat = floatArr;
-%#endif
-
-                for (i = 0; i < arraySize; i++) {
-                    vbool = convertObjectToFloat(arr->Get(i), &tmpFloat);
-                    floatPtr[i] = tmpFloat;
-                    if (!vbool) {
-                        free((void*)floatArr);
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                        field.value.asFloatArray.elements = NULL;
-%#else
-                        field.value.asArray.elements.asFloat = NULL;
-%#endif
-                        return false;
-                    }
-                }
-                break;
-            case (GS_TYPE_DOUBLE_ARRAY):
-                if(!value->IsArray()) {
-                    return false;
-                }
-                arr = v8::Local<v8::Array>::Cast(value);
-                arraySize = (int) arr->Length();
-                arrayPtr = NULL;
-                doubleArr = (double *) malloc(arraySize * sizeof(double));
-                if (doubleArr == NULL) {
-                    return false;
-                }
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                field.value.asDoubleArray.size = arraySize;
-                field.value.asDoubleArray.elements = (const double *) doubleArr;
-%#else
-                field.value.asArray.length = arraySize;
-                field.value.asArray.elements.asDouble = doubleArr;
-%#endif
-                for (i = 0; i < arraySize; i++) {
-                    vbool = convertObjectToDouble(arr->Get(i), &tmpDouble);
-                    doubleArr[i] = tmpDouble;
-                    if (!vbool){
-                        free((void*) doubleArr);
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                        field.value.asDoubleArray.elements = NULL;
-%#else
-                        field.value.asArray.elements.asDouble = NULL;
-%#endif
-                        return false;
-                    }
-                }
-                break;
-            case (GS_TYPE_TIMESTAMP_ARRAY):
-                if(!value->IsArray()) {
-                    return false;
-                }
-                arr = v8::Local<v8::Array>::Cast(value);
-                arraySize = (int) arr->Length();
-                arrayPtr = NULL;
-                timestampArr = (GSTimestamp *) malloc(arraySize * sizeof(GSTimestamp));
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                field.value.asTimestampArray.size = arraySize;
-                field.value.asTimestampArray.elements = timestampArr;
-%#else
-                field.value.asArray.length = arraySize;
-                field.value.asArray.elements.asTimestamp = (const GSTimestamp *) timestampArr;
-%#endif
-                bool checkRet;
-                for (i = 0; i < arraySize; i++) {
-                    checkRet = convertObjectToGSTimestamp(arr->Get(i), (timestampArr + i));
-                    if (!checkRet) {
-                        free((void*)timestampArr);
-%#if GS_COMPATIBILITY_VALUE_1_1_106
-                        field.value.asTimestampArray.elements = NULL:
-%#else
-                        field.value.asArray.elements.asTimestamp = NULL;
-%#endif
-                        return false;
-                    }
-                }
             default:
                 //Not support for now
                 return false;
@@ -1683,7 +1332,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 /*
 * typemap for get_row
 */
-%typemap(in, fragment = "convertObjectToFieldWithType") (griddb::Field* keyFields)(griddb::Field field) {
+%typemap(in, fragment = "convertToRowKeyFieldWithType") (griddb::Field* keyFields)(griddb::Field field) {
     $1 = &field;
     if ($input->IsNull() || $input->IsUndefined()) {
 %#if GS_COMPATIBILITY_SUPPORT_3_5
@@ -1695,7 +1344,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     } else {
         GSType* typeList = arg1->getGSTypeList();
         GSType type = typeList[0];
-        if (!convertObjectToFieldWithType(*$1, $input, type)) {
+        if (!convertToRowKeyFieldWithType(*$1, $input, type)) {
             SWIG_V8_Raise("can not convert to row filed");
             SWIG_fail;
         }
@@ -1737,7 +1386,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 /**
  * Typemaps for Store.multi_put
  */
-%typemap(in, fragment="convertObjectToFieldWithType", fragment = "SWIG_AsCharPtrAndSize") (GSRow*** listRow, const int *listRowContainerCount, const char ** listContainerName, size_t containerCount)
+%typemap(in, fragment="convertToRowKeyFieldWithType", fragment = "SWIG_AsCharPtrAndSize") (GSRow*** listRow, const int *listRowContainerCount, const char ** listContainerName, size_t containerCount)
 (v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, v8::Local<v8::Array> arr, int res = 0, v8::Local<v8::Array> rowArr,
 size_t sizeTmp = 0, int* alloc = 0, char* v = 0){
     if(!$input->IsObject()) {
@@ -1939,25 +1588,22 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
     $result = obj;
 }
 
-%typemap(freearg) (GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList) {
-}
-
 /**
  * Create typemap for RowKeyPredicate.set_range
  */
-%typemap(in, fragment= "convertObjectToFieldWithType") (griddb::Field* startKey)(griddb::Field field) {
+%typemap(in, fragment= "convertToRowKeyFieldWithType") (griddb::Field* startKey)(griddb::Field field) {
     $1 = &field;
     if ($1 == NULL) {
         SWIG_V8_Raise("Memory allocation error");
         SWIG_fail;
     }
     GSType type = arg1->get_key_type();
-    if (!(convertObjectToFieldWithType(*$1, $input, type))) {
+    if (!(convertToRowKeyFieldWithType(*$1, $input, type))) {
         %variable_fail(1, "String", "can not create row based on input");
     }
 }
 
-%typemap(in, fragment= "convertObjectToFieldWithType") (griddb::Field* finishKey)(griddb::Field field) {
+%typemap(in, fragment= "convertToRowKeyFieldWithType") (griddb::Field* finishKey)(griddb::Field field) {
     $1 = &field;
     if ($1 == NULL) {
         SWIG_V8_Raise("Memory allocation error");
@@ -1965,7 +1611,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
     }
 
     GSType type = arg1->get_key_type();
-    if (!(convertObjectToFieldWithType(*$1, $input, type))) {
+    if (!(convertToRowKeyFieldWithType(*$1, $input, type))) {
         %variable_fail(1, "String", "can not create row based on input");
     }
 }
@@ -1994,7 +1640,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
 /**
  * Typemap for RowKeyPredicate.set_distinct_keys
  */
-%typemap(in, fragment="convertObjectToFieldWithType") (const griddb::Field *keys, size_t keyCount) {
+%typemap(in, fragment="convertToRowKeyFieldWithType") (const griddb::Field *keys, size_t keyCount) {
     if(!$input->IsArray()) {
         SWIG_V8_Raise("Expected array as input");
         SWIG_fail;
@@ -2010,7 +1656,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
         }
         GSType type = arg1->get_key_type();
         for (int i = 0; i < $2; i++) {
-            if (!(convertObjectToFieldWithType($1[i], arr->Get(i), type))) {
+            if (!(convertToRowKeyFieldWithType($1[i], arr->Get(i), type))) {
                 SWIG_V8_Raise("Can not create row based on input");
                 SWIG_fail;
             }
