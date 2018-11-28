@@ -33,7 +33,6 @@ SOURCES = 	  src/TimeSeriesProperties.cpp \
 		  src/StoreFactory.cpp	\
 		  src/PartitionController.cpp	\
 		  src/Query.cpp				\
-		  src/Row.cpp				\
 		  src/QueryAnalysisEntry.cpp			\
 		  src/RowKeyPredicate.cpp	\
 		  src/RowSet.cpp			\
