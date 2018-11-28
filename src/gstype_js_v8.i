@@ -2254,7 +2254,9 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
                 GSType type = typeList[k];
                 if (!(convertObjectToGSRowField($1[i], k, fieldArr->Get(k), type))) {
                     $2 = i+1;
-                    SWIG_V8_Raise("Can not create row based on input");
+                    char errorMsg[200];
+                    sprintf(errorMsg, "Invalid value for row %d, column %d, type should be : %d", i, k, type);
+                    SWIG_V8_Raise(errorMsg);
                     SWIG_fail;
                 }
             }
