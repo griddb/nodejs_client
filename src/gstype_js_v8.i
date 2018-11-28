@@ -2042,10 +2042,11 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
 %typemap(freearg) (const GSRowKeyPredicateEntry *const * predicateList, size_t predicateCount) (int i, GSRowKeyPredicateEntry* pList) {
     if ($1 && *$1) {
         pList = *$1;
-
         for(i = 0; i < $2; i++) {
             if(pList[i].containerName){
-                free((void *) pList[i].containerName);
+                if (alloc$argnum[i] == SWIG_NEWOBJ) {
+                    %delete_array(pList[i].containerName);
+                }
             }
         }
         free((void *) pList);
@@ -2427,16 +2428,17 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
 
 %typemap(freearg) (ColumnInfoList*) {
     size_t len = $1->size;
-
-    for (int i =0; i < len; i++) {
-        if ($1->columnInfo[i].name) {
-            free((void*) $1->columnInfo[i].name);
+    if (alloc$argnum) {
+        for (int i =0; i < len; i++) {
+            if (alloc$argnum[i]) {
+                %delete_array($1->columnInfo[i].name);
+            }
         }
+        free(alloc$argnum);
     }
     if ($1->columnInfo) {
         free ((void *)$1->columnInfo);
     }
-
 }
 
 %typemap(out) (ColumnInfoList*) {
