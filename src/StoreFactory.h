@@ -16,7 +16,7 @@
 
 #ifndef _STORE_FACTORY_H_
 #define _STORE_FACTORY_H_
-#define CLIENT_VERSION "GridDB Node.JS Client 0.7"
+#define CLIENT_VERSION "GridDB Node.JS Client 0.8"
 
 #include "gridstore.h"
 #include "Store.h"
