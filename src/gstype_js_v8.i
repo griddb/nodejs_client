@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-#define UTC_TIMESTAMP_MAX 253402300799.999
+#define UTC_TIMESTAMP_MAX 253402300799.999 // Max timestamp in seconds
 
 %{
 #include <Field.h>
@@ -459,7 +459,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
             }
             return false;
         }
-        // this is for convert python's string datetime (YYYY-MM-DDTHH:mm:ss:sssZ)
+        // this is for convert javascript's string datetime (YYYY-MM-DDTHH:mm:ss:sssZ)
         // to griddb's string datetime (YYYY-MM-DDTHH:mm:ss.sssZ)
         v[19] = '.';
 
@@ -467,11 +467,10 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
         if (alloc != SWIG_OLDOBJ) {
             delete [] v;
         }
-
         return (retConvertTimestamp == GS_TRUE);
     } else if (value->IsNumber()) {
         *timestamp = value->NumberValue();
-        if (utcTimestamp > UTC_TIMESTAMP_MAX) {
+        if (*timestamp > (UTC_TIMESTAMP_MAX * 1000)) { //miliseconds
             return false;
         }
         return true;
