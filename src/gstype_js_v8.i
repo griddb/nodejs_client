@@ -1807,7 +1807,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 /**
 * Typemaps for put_row() function
 */
-%typemap(in, fragment= "convertObjectToGSRowField") (griddb::Row* row) {
+%typemap(in, fragment= "convertObjectToGSRowField") (GSRow* row) {
     if(!$input->IsArray()) {
         SWIG_V8_Raise("Expected array as input");
         SWIG_fail;
@@ -1824,13 +1824,11 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
         }
     }
 }
-%typemap(freearg) (griddb::Row *row) {
-}
 
 /**
 * Typemaps for put_row() function
 */
-%typemap(in, fragment="convertObjectToGSRowField") (griddb::Row *rowContainer) {
+%typemap(in, fragment="convertObjectToGSRowField") (GSRow *rowContainer) {
     if(!$input->IsArray()) {
         SWIG_V8_Raise("Expected array as input");
         SWIG_fail;
@@ -1856,8 +1854,6 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
         }
     }
 }
-%typemap(freearg) (griddb::Row *row) {
-}
 
 /*
 * typemap for get_row
@@ -1881,14 +1877,14 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     }
 }
 
-%typemap(in, numinputs = 0) (griddb::Row *rowdata) {
+%typemap(in, numinputs = 0) (GSRow *rowdata) {
     $1 = NULL;
 }
 
-%typemap(freearg) (griddb::Row *rowdata) {
+%typemap(freearg) (GSRow *rowdata) {
 }
 
-%typemap(argout, fragment = "convertGSRowFieldToObject") (griddb::Row *rowdata) (v8::Local<v8::Array> obj, v8::Handle<v8::Value> val)%{
+%typemap(argout, fragment = "convertGSRowFieldToObject") (GSRow *rowdata) (v8::Local<v8::Array> obj, v8::Handle<v8::Value> val)%{
     GSRow* row;
     row = arg1->getGSRowPtr();
 #if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
@@ -2255,7 +2251,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
     }
 }
 
-%typemap(freearg) (griddb::Row** listRowdata, int rowCount) {
+%typemap(freearg) (GSRow** listRowdata, int rowCount) {
     if($1) {
         for (int rowNum = 0; rowNum < $2; rowNum++) {
             gsCloseRow(&$1[rowNum]);
@@ -2297,20 +2293,18 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
 /**
  * Typemap for Rowset::next()
  */
-%typemap(in, numinputs = 0) (GSRowSetType* type, griddb::Row* row, bool* hasNextRow,
+%typemap(in, numinputs = 0) (GSRowSetType* type, bool* hasNextRow,
         griddb::QueryAnalysisEntry** queryAnalysis, griddb::AggregationResult** aggResult)
-    (GSRowSetType typeTmp, griddb::Row rowTmp, bool hasNextRowTmp,
+    (GSRowSetType typeTmp, bool hasNextRowTmp,
     griddb::QueryAnalysisEntry* queryAnalysisTmp, griddb::AggregationResult* aggResultTmp) {
     $1 = &typeTmp;
-    $2 = &rowTmp;
-    $3 = &hasNextRowTmp;
-    queryAnalysisTmp = new griddb::QueryAnalysisEntry(NULL);
-    $4 = &queryAnalysisTmp;
-    aggResultTmp = new griddb::AggregationResult(NULL);
-    $5 = &aggResultTmp;
+    hasNextRowTmp = true;
+    $2 = &hasNextRowTmp;
+    $3 = &queryAnalysisTmp;
+    $4 = &aggResultTmp;
 }
 
-%typemap(argout, fragment = "convertFieldToObject") (GSRowSetType* type, griddb::Row* row, bool* hasNextRow,
+%typemap(argout, fragment = "convertFieldToObject") (GSRowSetType* type, bool* hasNextRow,
         griddb::QueryAnalysisEntry** queryAnalysis, griddb::AggregationResult** aggResult) 
     (v8::Local<v8::Array> obj, v8::Handle<v8::Value> value, GSRow* row){
     switch(typeTmp$argnum) {
