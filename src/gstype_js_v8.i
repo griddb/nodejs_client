@@ -1321,13 +1321,13 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 if (byteArrVal == NULL) {
                     return false;
                 }
-
                 for (i = 0; i < size; i++) {
                     checkConvert = SWIG_AsVal_int(arr->Get(i), &tmpInt);
                     byteArrVal[i] = (int8_t)tmpInt;
                      if (!SWIG_IsOK(checkConvert) ||
                         tmpInt < std::numeric_limits<int8_t>::min() ||
-                        tmpInt > std::numeric_limits<int8_t>::max()) {
+                        tmpInt > std::numeric_limits<int8_t>::max() ||
+                        (!arr->Get(i)->IsInt32())) {
                          free((void*)byteArrVal);
                          byteArrVal = NULL;
                          return false;
@@ -1351,7 +1351,8 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                     shortArrVal[i] = (int16_t)tmpInt;
                     if (vbool || !SWIG_IsOK(checkConvert) ||
                         tmpInt < std::numeric_limits<int16_t>::min() ||
-                        tmpInt > std::numeric_limits<int16_t>::max()) {
+                        tmpInt > std::numeric_limits<int16_t>::max() ||
+                        (!arr->Get(i)->IsInt32())) {
                             free((void*)shortArrVal);
                             shortArrVal = NULL;
                         return false;
@@ -1371,8 +1372,8 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                     return false;
                 }
                 for (i = 0; i < size; i++) {
-                    checkConvert = SWIG_AsVal_long(arr->Get(i), ((int64_t *)longArrVal + i));
-                    if (!SWIG_IsOK(checkConvert)) {
+                    checkConvert = SWIG_AsVal_long(arr->Get(i), &longArrVal[i]);
+                    if (!SWIG_IsOK(checkConvert)){
                         free((void*)longArrVal);
                         longArrVal = NULL;
                         return false;
