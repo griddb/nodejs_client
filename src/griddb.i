@@ -53,7 +53,7 @@
 %module griddb_ruby_client
 #elif defined(SWIGJAVASCRIPT)
 %include "gstype_js_v8.i"
-%module griddb_js_client
+%module griddb_client
 #elif defined(SWIGPHP)
 %include "gstype_php.i"
 %module griddb_php_client

@@ -26,7 +26,7 @@
 #elif defined(SWIGPHP)
 %module griddb_php_client
 #elif defined(SWIGJAVASCRIPT)
-%module griddb_js_client
+%module griddb_client
 #endif
 
 %include <stdint.i>
