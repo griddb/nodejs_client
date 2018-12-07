@@ -59,7 +59,7 @@ class Store {
 		return new Promise(function(resolve, reject) {
 			setTimeout(function() {
 				try {
-					this_.store.dropContainer(name);
+					resolve(this_.store.dropContainer(name));
 				} catch(err) {
 					reject(err);
 				}
