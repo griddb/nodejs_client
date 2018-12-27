@@ -961,7 +961,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 %typemap(in, fragment = "SWIG_AsCharPtrAndSize", fragment = "cleanString") (const char* host, int32_t port, const char* cluster_name,
         const char* database, const char* username, const char* password,
         const char* notification_member, const char* notification_provider) 
-        (v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, int i, int j, size_t size = 0, int* alloc = 0, int res, char* name = 0, char* v = 0) {
+        (v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, int i, int j, size_t size = 0, int* alloc = 0, int res, char* v = 0) {
     if (!$input->IsObject()) {
         SWIG_V8_Raise("Expected object property as input");
         SWIG_fail;
@@ -969,6 +969,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     obj = $input->ToObject();
     keys = obj->GetOwnPropertyNames();
     int len = (int) keys->Length();
+    char* name = 0;
     if (len > 0) {
         alloc = (int*) malloc(len * 2 * sizeof(int));
         memset(alloc, 0, len * 2 * sizeof(int));
@@ -1004,7 +1005,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 SWIG_V8_Raise("Invalid Property");
                 SWIG_fail;
             }
-            cleanString(name$argnum, alloc[j]);
+            cleanString(name, alloc[j]);
             cleanString(v, alloc[j + 1]);
 
             j += 2;
