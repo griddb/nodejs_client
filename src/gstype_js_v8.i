@@ -1985,3 +1985,46 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
         free((void*) $3);
     }
 }
+
+/**
+* Typemaps for set_fetch_options() : support keyword parameter ({"limit" : int})
+*/
+%typemap(in, fragment = "SWIG_AsCharPtrAndSize") (int limit, bool partial) 
+        (v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, int i, int j, size_t size = 0, int* alloc = 0, int res) {
+    char* name;
+    if (!$input->IsObject()) {
+        SWIG_V8_Raise("Expected object property as input");
+        SWIG_fail;
+    }
+    obj = $input->ToObject();
+    keys = obj->GetOwnPropertyNames();
+    int len = (int) keys->Length();
+    //Create $1, $2 with default value
+    $1 = -1;
+    $2 = false;
+    int allocKey;
+    char errorMsg[60];
+    if (len > 0) {
+        for (int i = 0; i < len; i++) {
+            res = SWIG_AsCharPtrAndSize(keys->Get(i), &name, &size, &allocKey);
+            if (!SWIG_IsOK(res)) {
+                %variable_fail(res, "String", "name");
+            }
+            if (strcmp(name, "limit") == 0) {
+                if (!obj->Get(keys->Get(i))->IsInt32()) {
+                    sprintf(errorMsg, "Invalid value for property %s", name);
+                    SWIG_V8_Raise(errorMsg);
+                    cleanString(name, allocKey);
+                    SWIG_fail;
+                }
+                $1 = obj->Get(keys->Get(i))->IntegerValue();
+            } else {
+                sprintf(errorMsg, "Invalid property %s", name);
+                cleanString(name, allocKey);
+                SWIG_V8_Raise(errorMsg);
+                SWIG_fail;
+            }
+            cleanString(name, allocKey);
+        }
+    }
+}
