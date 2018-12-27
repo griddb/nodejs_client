@@ -46,7 +46,7 @@ class Store {
         void multi_put(GSRow*** listRow, const int *listRowContainerCount,
                 const char ** listContainerName, size_t containerCount);
         void multi_get(const GSRowKeyPredicateEntry* const * predicateList,
-                size_t predicateCount, GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList);
+                size_t predicateCount, GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList, GSType*** typeList);
 
         ContainerInfo* get_container_info(const char *name);
         PartitionController* partition_info();

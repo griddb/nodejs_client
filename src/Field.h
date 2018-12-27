@@ -26,10 +26,9 @@ using namespace std;
 namespace griddb {
 
 struct Field {
-    GSChar *name;
     GSType type;
     GSValue value;
-    Field() : name(NULL), type(GS_TYPE_STRING) {
+    Field() : type(GS_TYPE_STRING) {
         memset(&value, 0, sizeof(GSValue));
     };
 

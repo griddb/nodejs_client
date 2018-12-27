@@ -65,7 +65,7 @@ namespace griddb {
         if (mContainer != NULL) {
             gsCloseContainer(&mContainer, allRelated);
             mContainer = NULL;
-            free(typeList);
+        	free(typeList);
         }
     }
 
@@ -76,12 +76,10 @@ namespace griddb {
         GSResult ret = GS_RESULT_OK;
 #if GS_COMPATIBILITY_SUPPORT_3_5
         if (name) {
-            int colIndex = this->get_column_index(column_name);
-            //Case not found column name
-            if (colIndex == -1) {
-                throw GSException(mContainer, "Can't find column");
-            }
-            GSIndexInfo indexInfo = {name, index_type, colIndex, column_name};
+            GSIndexInfo indexInfo = GS_INDEX_INFO_INITIALIZER;
+            indexInfo.name = name;
+            indexInfo.type = index_type;
+            indexInfo.columnName = column_name;
             ret = gsDropIndexDetail(mContainer, &indexInfo);
         }
         else {
@@ -102,12 +100,10 @@ namespace griddb {
         GSResult ret = GS_RESULT_OK;
 #if GS_COMPATIBILITY_SUPPORT_3_5
         if (name){
-            int colIndex = this->get_column_index(column_name);
-            //Case not found column name
-            if (colIndex == -1) {
-                throw GSException(mContainer, "Can't find column");
-            }
-            GSIndexInfo indexInfo = {name, index_type, colIndex, column_name};
+            GSIndexInfo indexInfo = GS_INDEX_INFO_INITIALIZER;
+            indexInfo.name = name;
+            indexInfo.type = index_type;
+            indexInfo.columnName = column_name;
             ret = gsCreateIndexDetail(mContainer, &indexInfo);
         }
         else {

@@ -34,7 +34,6 @@ namespace griddb {
      */
     bool RowSet::has_next() {
         GSRowSetType type;
-        bool hasNextRow = false;
         type = this->type();
         switch(type) {
         case (GS_ROW_SET_CONTAINER_ROWS):
@@ -146,7 +145,7 @@ namespace griddb {
      * Get next query analysis
      */
     QueryAnalysisEntry* RowSet::get_next_query_analysis(){
-        GSQueryAnalysisEntry queryAnalysis;
+    	GSQueryAnalysisEntry queryAnalysis = GS_QUERY_ANALYSIS_ENTRY_INITIALIZER;
         GSResult ret;
         ret = gsGetNextQueryAnalysis(mRowSet, &queryAnalysis);
         if (ret != GS_RESULT_OK) {

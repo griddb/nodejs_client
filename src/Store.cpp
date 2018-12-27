@@ -48,7 +48,7 @@ namespace griddb {
      * Return information object of a specific container
      */
     ContainerInfo* Store::get_container_info(const char* name) {
-        GSContainerInfo containerInfo;
+        GSContainerInfo containerInfo = GS_CONTAINER_INFO_INITIALIZER;
         GSChar bExists;
         GSResult ret = gsGetContainerInfo(mStore, name, &containerInfo, &bExists);
         if (ret != GS_RESULT_OK) {
@@ -90,7 +90,7 @@ namespace griddb {
             //If not found container, return NULL in target language
             return NULL;
         }
-        GSContainerInfo containerInfo;
+        GSContainerInfo containerInfo = GS_CONTAINER_INFO_INITIALIZER;
         GSChar bExists;
         ret = gsGetContainerInfo(mStore, name, &containerInfo, &bExists);
         if (ret != GS_RESULT_OK) {
@@ -138,7 +138,6 @@ namespace griddb {
      */
     void Store::multi_put(GSRow*** listRow, const int *listRowContainerCount,
             const char ** listContainerName, size_t containerCount) {
-        const GSChar *containerName;
         GSResult ret;
         GSContainerRowEntry * entryList = (GSContainerRowEntry*) malloc (containerCount * sizeof(GSContainerRowEntry));
         for (int i= 0; i < containerCount; i++) {
@@ -156,15 +155,21 @@ namespace griddb {
      * muti_get method. Using gsGetMultipleContainerRows C-API
      */
     void Store::multi_get(const GSRowKeyPredicateEntry* const * predicateList,
-            size_t predicateCount, GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList) {
+            size_t predicateCount, GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList, GSType*** typeList) {
         // get number of column of rows in each container.
         *colNumList = new int[predicateCount]; //will be free in argout
-        for (int i = 0; i < predicateCount; i++) {
+        *typeList = new GSType*[predicateCount]; //will be free in argout
+        int length = (int)predicateCount;
+        for (int i = 0; i < length; i++) {
             Container *tmpContainer = this->get_container((*predicateList)[i].containerName);
             if (tmpContainer == NULL) {
                 throw GSException(mStore, "Not found container");
             }
             (*colNumList)[i] = tmpContainer->getColumnCount();
+            (*typeList)[i] = (GSType*) malloc(sizeof(GSType) * (*colNumList)[i]);
+            for (int j = 0; j < (*colNumList)[i]; j++) {
+                (*typeList)[i][j] = tmpContainer->getGSTypeList()[j];
+            }
             delete tmpContainer;
         }
         // Get data for entryList
