@@ -22,9 +22,13 @@ class StoreFactory {
 class Store {
     constructor(store) {
         this.store = store;
+        this.pController = null;
     }
     get partitionController() {
-        return this.store.partitionController;
+        if (this.pController == null) {
+            this.pController = new PartitionController(this.store.partitionInfo);
+        }
+        return this.pController;
     }
 
     set timestampOutput(value) {
@@ -162,6 +166,7 @@ class Store {
             throw(convertToGSException(err));
         }
     }
+
 };
 
 class Container {
