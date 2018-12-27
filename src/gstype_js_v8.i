@@ -331,15 +331,6 @@ static bool convertObjectToBool(v8::Local<v8::Value> value, bool* boolValPtr) {
 }
 }
 
-/**
- * Support compare double
- */
-%fragment("double_equals", "header") {
-bool double_equals(double a, double b, double epsilon) {
-    return fabs(a - b) < epsilon;
-}
-}
-
 %fragment("convertTimestampToObject", "header") {
 static v8::Handle<v8::Value> convertTimestampToObject(GSTimestamp* timestamp, bool timestamp_to_float = true) {
     if (timestamp_to_float) {
@@ -422,7 +413,7 @@ static bool convertObjectToDouble(v8::Local<v8::Value> value, double* floatValPt
  * Support convert type from object to Float. input in target language can be :
  * float or integer
  */
-%fragment("convertObjectToFloat", "header", fragment = "double_equals") {
+%fragment("convertObjectToFloat", "header") {
 static bool convertObjectToFloat(v8::Local<v8::Value> value, float* floatValPtr) {
     int checkConvert = 0;
 
@@ -444,15 +435,8 @@ static bool convertObjectToFloat(v8::Local<v8::Value> value, float* floatValPtr)
         }
         *floatValPtr = value->NumberValue();
 
-        if (double_equals(*floatValPtr, std::numeric_limits<float>::min(), std::numeric_limits<float>::epsilon()) ||
-                 double_equals(*floatValPtr, std::numeric_limits<float>::max(), std::numeric_limits<float>::epsilon()) ||
-                 double_equals(*floatValPtr, (-1) * std::numeric_limits<float>::max(), std::numeric_limits<float>::epsilon()) ||
-                 double_equals(*floatValPtr, (-1) * std::numeric_limits<float>::min(), std::numeric_limits<float>::epsilon())) {
-             return true;
-         }
-         return ((*floatValPtr > std::numeric_limits<float>::min() &&
-                 *floatValPtr < std::numeric_limits<float>::max())|| (*floatValPtr > (-1)*std::numeric_limits<float>::max() &&
-                 *floatValPtr < (-1) * std::numeric_limits<float>::min()));
+        return (*floatValPtr < std::numeric_limits<float>::max() &&
+                *floatValPtr > -1 *std::numeric_limits<float>::max());
     }
 }
 }
@@ -565,7 +549,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 %fragment("convertToFieldWithType", "header", fragment = "SWIG_AsCharPtrAndSize",
         fragment = "convertObjectToDouble", fragment = "convertObjectToGSTimestamp", 
         fragment = "SWIG_AsVal_bool", fragment = "convertObjectToBool", 
-        fragment = "double_equals", fragment = "convertObjectToFloat", 
+        fragment = "convertObjectToFloat", 
         fragment = "convertObjectToStringArray", fragment = "cleanString",
         fragment = "convertObjectToLong") {
     static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> value, GSType type) {
