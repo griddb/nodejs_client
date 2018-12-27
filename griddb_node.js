@@ -289,9 +289,9 @@ class Query {
         }
     }
     
-    setFetchOption(limit = null) {
+    setFetchOptions(option) {
         try {
-            this.query.setFetchOption(limit);
+            this.query.setFetchOptions(option);
         } catch (err) {
             throw(err);
         }
@@ -363,13 +363,11 @@ class AggregationResult {
     }
 }
 
-class QueryAnalysis {
+class QueryAnalysisEntry {
     constructor(queryAnalysis) {
         this.queryAnalysis = queryAnalysis;
     }
     
-    // Async function
-
     // Sync function
     get() {
         try {
