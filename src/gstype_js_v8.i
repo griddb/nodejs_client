@@ -1254,25 +1254,226 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     $1 = NULL;
 }
 
-%typemap(freearg) (GSRow *rowdata) {
+/**
+ * Support convert data from GSRow* row to Python list 
+ */
+%fragment("getRowFields", "header", fragment = "convertTimestampToObject") {
+static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool timestampOutput, int* columnError, 
+        GSType* fieldTypeError, v8::Local<v8::Array> outList) {
+    GSResult ret;
+    GSValue mValue;
+    bool retVal = true;
+    for (int i = 0; i < columnCount; i++) {
+        //Check NULL value
+        GSBool nullValue;
+%#if GS_COMPATIBILITY_SUPPORT_3_5
+        ret = gsGetRowFieldNull(row, (int32_t) i, &nullValue);
+        if (ret != GS_RESULT_OK) {
+            *columnError = i;
+            retVal = false;
+            *fieldTypeError = GS_TYPE_NULL;
+            return retVal;
+        }
+        if (nullValue) {
+            outList->Set(i, SWIGV8_NULL());
+            continue;
+        }
+%#endif
+        switch(typeList[i]) {
+            case GS_TYPE_LONG: {
+                int64_t longValue;
+                ret = gsGetRowFieldAsLong(row, (int32_t) i, &longValue);
+                outList->Set(i, SWIGV8_NUMBER_NEW(longValue));
+                break;
+            }
+            case GS_TYPE_STRING: {
+                GSChar* stringValue;
+                ret = gsGetRowFieldAsString(row, (int32_t) i, (const GSChar **)&stringValue);
+                outList->Set(i, SWIGV8_STRING_NEW(stringValue));
+                break;
+            }
+            case GS_TYPE_BLOB: {
+                GSBlob blobValue;
+                ret = gsGetRowFieldAsBlob(row, (int32_t) i, &blobValue);
+                outList->Set(i, Nan::CopyBuffer((char *)blobValue.data, blobValue.size).ToLocalChecked());
+                break;
+            }
+            case GS_TYPE_BOOL: {
+                GSBool boolValue;
+                ret = gsGetRowFieldAsBool(row, (int32_t) i, &boolValue);
+                outList->Set(i, SWIGV8_BOOLEAN_NEW((bool)boolValue));
+                break;
+            }
+            case GS_TYPE_INTEGER: {
+                int32_t intValue;
+                ret = gsGetRowFieldAsInteger(row, (int32_t) i, &intValue);
+                outList->Set(i, SWIGV8_INT32_NEW(intValue));
+                break;
+            }
+            case GS_TYPE_FLOAT: {
+                float floatValue;
+                ret = gsGetRowFieldAsFloat(row, (int32_t) i, &floatValue);
+                outList->Set(i, SWIGV8_NUMBER_NEW(floatValue));
+                break;
+            }
+            case GS_TYPE_DOUBLE: {
+                double doubleValue;
+                ret = gsGetRowFieldAsDouble(row, (int32_t) i, &doubleValue);
+                outList->Set(i, SWIGV8_NUMBER_NEW(doubleValue));
+                break;
+            }
+            case GS_TYPE_TIMESTAMP: {
+                GSTimestamp timestampValue;
+                ret = gsGetRowFieldAsTimestamp(row, (int32_t) i, &timestampValue);
+                outList->Set(i, convertTimestampToObject(&timestampValue, timestampOutput));
+                break;
+            }
+            case GS_TYPE_BYTE: {
+                int8_t byteValue;
+                ret = gsGetRowFieldAsByte(row, (int32_t) i, &byteValue);
+                outList->Set(i, SWIGV8_INT32_NEW(byteValue));
+                break;
+            }
+            case GS_TYPE_SHORT: {
+                int16_t shortValue;
+                ret = gsGetRowFieldAsShort(row, (int32_t) i, &shortValue);
+                outList->Set(i, SWIGV8_INT32_NEW(shortValue));
+                break;
+            }
+            case GS_TYPE_GEOMETRY: {
+                GSChar* geoValue;
+                ret = gsGetRowFieldAsGeometry(row, (int32_t) i, (const GSChar **)&geoValue);
+                outList->Set(i, SWIGV8_STRING_NEW(geoValue));
+                break;
+            }
+            case GS_TYPE_INTEGER_ARRAY: {
+                int32_t* intArr;
+                size_t size;
+                ret = gsGetRowFieldAsIntegerArray (row, (int32_t) i, (const int32_t **)&intArr, &size);
+                v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
+                for (int j = 0; j < size; j++) {
+                    list->Set(j, SWIG_From_int(intArr[j]));
+                }
+                outList->Set(i, list);
+                break;
+            }
+            case GS_TYPE_STRING_ARRAY: {
+                GSChar** stringArrVal;
+                size_t size;
+                ret = gsGetRowFieldAsStringArray (row, (int32_t) i, ( const GSChar *const **)&stringArrVal, &size);
+                v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
+                for (int j = 0; j < size; j++) {
+                    list->Set(j, SWIGV8_STRING_NEW((GSChar *)stringArrVal[j]));
+                }
+                outList->Set(i, list);
+                break;
+            }
+            case GS_TYPE_BOOL_ARRAY: {
+                GSBool* boolArr;
+                size_t size;
+                ret = gsGetRowFieldAsBoolArray(row, (int32_t) i, (const GSBool **)&boolArr, &size);
+                v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
+                for (int j = 0; j < size; j++) {
+                    list->Set(j, SWIG_From_bool(boolArr[j]));
+                }
+                outList->Set(i, list);
+                break;
+            }
+            case GS_TYPE_BYTE_ARRAY: {
+                int8_t* byteArr;
+                size_t size;
+                ret = gsGetRowFieldAsByteArray(row, (int32_t) i, (const int8_t **)&byteArr, &size);
+                v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
+                for (int j = 0; j < size; j++) {
+                    list->Set(j, SWIG_From_int(byteArr[j]));
+                }
+                outList->Set(i, list);
+                break;
+            }
+            case GS_TYPE_SHORT_ARRAY: {
+                int16_t* shortArr;
+                size_t size;
+                ret = gsGetRowFieldAsShortArray(row, (int32_t) i, (const int16_t **)&shortArr, &size);
+                v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
+                for (int j = 0; j < size; j++) {
+                    list->Set(j, SWIG_From_int(shortArr[j]));
+                }
+                outList->Set(i, list);
+                break;
+            }
+            case GS_TYPE_LONG_ARRAY: {
+                int64_t* longArr;
+                size_t size;
+                ret = gsGetRowFieldAsLongArray(row, (int32_t) i, (const int64_t **)&longArr, &size);
+                v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
+                for (int j = 0; j < size; j++) {
+                    list->Set(j, SWIGV8_NUMBER_NEW(longArr[j]));
+                }
+                outList->Set(i, list);
+                break;
+            }
+            case GS_TYPE_FLOAT_ARRAY: {
+                float* floatArr;
+                size_t size;
+                ret = gsGetRowFieldAsFloatArray(row, (int32_t) i, (const float **)&floatArr, &size);
+                v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
+                for (int j = 0; j < size; j++) {
+                    list->Set(j, SWIGV8_NUMBER_NEW(((float *)floatArr)[j]));
+                }
+                outList->Set(i, list);
+                break;
+            }
+            case GS_TYPE_DOUBLE_ARRAY: {
+                double* doubleArr;
+                size_t size;
+                ret = gsGetRowFieldAsDoubleArray(row, (int32_t) i, (const double **)&doubleArr, &size);
+                v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
+                for (int j = 0; j < size; j++) {
+                    list->Set(j, SWIGV8_NUMBER_NEW(((double *)doubleArr)[j]));
+                }
+                outList->Set(i, list);
+                break;
+            }
+            case GS_TYPE_TIMESTAMP_ARRAY: {
+                GSTimestamp* timestampArr;
+                size_t size;
+                ret = gsGetRowFieldAsTimestampArray(row, (int32_t) i, (const GSTimestamp **)&timestampArr, &size);
+                v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
+                for (int j = 0; j < size; j++) {
+                    list->Set(j, convertTimestampToObject((GSTimestamp*)&(timestampArr[j]), timestampOutput));
+                }
+                outList->Set(i, list);
+                break;
+            }
+            default: {
+                // NOT OK
+                ret = -1;
+                break;
+            }
+        }
+        if (ret != GS_RESULT_OK) {
+            *columnError = i;
+            *fieldTypeError = typeList[i];
+            retVal = false;
+            return retVal;
+        }
+    }
+    return retVal;
+}
 }
 
-%typemap(argout, fragment = "convertFieldToObject") (GSRow *rowdata) (v8::Local<v8::Array> obj, v8::Handle<v8::Value> val) {
-    GSRow* row;
-    row = arg1->getGSRowPtr();
-    GSValue mValue;
-    GSType mType;
-    GSResult ret;
+%typemap(argout, fragment = "getRowFields") (GSRow *rowdata) (v8::Local<v8::Array> obj, v8::Handle<v8::Value> val) {
+    GSRow* row = arg1->getGSRowPtr();
     obj = SWIGV8_ARRAY_NEW();
-    for (int i = 0; i < arg1->getColumnCount(); i++) {
-        ret = gsGetRowFieldGeneral(row, i, &mValue, &mType);
-        if (ret != GS_RESULT_OK) {
-            char errorMsg[60];
-            sprintf(errorMsg, "Can't get data for field %d", i);
-            SWIG_V8_Raise(errorMsg);
-            SWIG_fail;
-        }
-        obj->Set(i, convertFieldToObject(&mValue, mType, arg1->timestamp_output_with_float));
+    bool retVal;
+    int errorColumn;
+    GSType errorType;
+    retVal = getRowFields(row, arg1->getColumnCount(), arg1->getGSTypeList(), arg1->timestamp_output_with_float, &errorColumn, &errorType, obj);
+    if (retVal == false) {
+        char errorMsg[60];
+        sprintf(errorMsg, "Can't get data for field %d with type%d", errorColumn, errorType);
+        SWIG_V8_Raise(errorMsg);
+        SWIG_fail;
     }
     $result = obj;
 }
@@ -1440,44 +1641,51 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
 /**
  * Typemaps output for Store.multi_get() function
  */
-%typemap(in, numinputs = 0) (GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList) 
-        (GSContainerRowEntry *tmpEntryList, size_t tmpContainerCount, int *tmpcolNumList) {
+%typemap(in, numinputs = 0) (GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList, GSType*** typeList) 
+        (GSContainerRowEntry *tmpEntryList, size_t tmpContainerCount, int *tmpcolNumList, GSType** tmpTypeList) {
     $1 = &tmpEntryList;
     $2 = &tmpContainerCount;
     $3 = &tmpcolNumList;
+    $4 = &tmpTypeList;
 }
 
-%typemap(argout, fragment = "convertFieldToObject") (GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList) 
-(v8::Local<v8::Object> obj, v8::Local<v8::Array> arr, v8::Local<v8::Array> rowArr,
-v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
+%typemap(argout, fragment = "getRowFields") (GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList, GSType*** typeList) 
+(v8::Local<v8::Object> obj, v8::Local<v8::Array> arr, v8::Local<v8::Array> rowArr, 
+        v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
     obj = SWIGV8_OBJECT_NEW();
     int numContainer = (int) *$2;
-    GSValue mValue;
-    GSType mType;
-    GSResult ret;
+    bool retVal;
+    int errorColumn;
+    GSType errorType;
     for (int i = 0; i < numContainer; i++) {
         key = SWIGV8_STRING_NEW2((*$1)[i].containerName, strlen((char*)(*$1)[i].containerName));
         arr = SWIGV8_ARRAY_NEW();
-    
         for (int j = 0; j < (*$1)[i].rowCount; j++) {
             row = (GSRow*)(*$1)[i].rowList[j];
             rowArr = SWIGV8_ARRAY_NEW();
-            for (int k = 0; k < (*$3)[i]; k++) {
-                ret = gsGetRowFieldGeneral(row, k, &mValue, &mType);
-                if (ret != GS_RESULT_OK) {
-                    char errorMsg[60];
-                    sprintf(errorMsg, "Can't get data for field %d", k);
-                    SWIG_V8_Raise(errorMsg);
-                    SWIG_fail;
-                }
-                rowArr->Set(k, convertFieldToObject(&mValue, mType, arg1->timestamp_output_with_float));
+            retVal = getRowFields(row, (*$3)[i], (*$4)[i], arg1->timestamp_output_with_float, &errorColumn, &errorType, rowArr);
+            if (retVal == false) {
+                char errorMsg[60];
+                sprintf(errorMsg, "Can't get data for field %d with type %d", errorColumn, errorType);
+                SWIG_V8_Raise(errorMsg);
+                SWIG_fail;
             }
             arr->Set(j, rowArr);
         }
         obj->Set(key, arr);
     }
     $result = obj;
-    delete (*$3);
+    if (*$4) {
+        for (int j = 0; j < *$2;j++) {
+            if ((*$4)[j]) {
+                free ((void*) (*$4)[j]);
+            }
+        }
+        delete (*$4);
+    }
+    if (*$3) {
+        delete (*$3);
+    }
 }
 
 /**
@@ -1672,16 +1880,15 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
     $3 = &queryAnalysisTmp;
     $4 = &aggResultTmp;
 }
-
 %typemap(argout, fragment = "convertFieldToObject") (GSRowSetType* type, bool* hasNextRow,
         griddb::QueryAnalysisEntry** queryAnalysis, griddb::AggregationResult** aggResult) 
     (v8::Local<v8::Array> obj, v8::Handle<v8::Value> value) {
     GSRow* row;
-    GSValue mValue;
-    GSType mType;
-    GSResult ret;
     switch (typeTmp$argnum) {
-        case GS_ROW_SET_CONTAINER_ROWS:
+        case GS_ROW_SET_CONTAINER_ROWS: {
+            bool retVal;
+            int errorColumn;
+            GSType errorType;
             if (hasNextRowTmp$argnum == false) {
                 SWIGV8_NULL();
             } else {
@@ -1691,19 +1898,17 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
                     SWIG_V8_Raise("Memory allocation error");
                     SWIG_fail;
                 }
-                for (int i = 0; i < arg1->getColumnCount(); i++) {
-                    ret = gsGetRowFieldGeneral(row, i, &mValue, &mType);
-                    if (ret != GS_RESULT_OK) {
-                        char errorMsg[60];
-                        sprintf(errorMsg, "Can't get data for field %d", i);
-                        SWIG_V8_Raise(errorMsg);
-                        SWIG_fail;
-                    }
-                    obj->Set(i, convertFieldToObject(&mValue, mType, arg1->timestamp_output_with_float));
+                retVal = getRowFields(row, arg1->getColumnCount(), arg1->getGSTypeList(), arg1->timestamp_output_with_float, &errorColumn, &errorType, obj);
+                if (retVal == false) {
+                    char errorMsg[60];
+                    sprintf(errorMsg, "Can't get data for field %d with type%d", errorColumn, errorType);
+                    SWIG_V8_Raise(errorMsg);
+                    SWIG_fail;
                 }
                 $result = obj;
             }
             break;
+        }
         case GS_ROW_SET_AGGREGATION_RESULT:
             if (hasNextRowTmp$argnum == true) {
                 value = SWIG_V8_NewPointerObj((void *)aggResultTmp$argnum, $descriptor(griddb::AggregationResult *), 0);
@@ -1717,6 +1922,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
             }
             break;
         default:
+            SWIG_V8_Raise("Invalid Rowset type");
             SWIG_fail;
             break;
     }
