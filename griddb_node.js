@@ -222,16 +222,12 @@ class Container {
         });
     }
 
-    createIndex(columnName, indexType = griddb.GS_INDEX_FLAG_DEFAULT , name = null) {
+    createIndex(parameterObj) {
         var this_ = this;
         return new Promise(function(resolve, reject) {
             setTimeout(function() {
                 try {
-                    if (name == null) {
-                        resolve(this_.container.createIndex(columnName, indexType));
-                    } else {
-                        resolve(this_.container.createIndex(columnName, indexType, name));
-                    }
+                    resolve(this_.container.createIndex(parameterObj));
                 } catch(err) {
                     reject(convertToGSException(err));
                 }
@@ -239,16 +235,12 @@ class Container {
         });
     }
 
-    dropIndex(columnName, indexType = griddb.GS_INDEX_FLAG_DEFAULT , name = null) {
+    dropIndex(parameterObj) {
         var this_ = this;
         return new Promise(function(resolve, reject) {
             setTimeout(function() {
                 try {
-                    if (name == null) {
-                        resolve(this_.container.dropIndex(columnName, indexType));
-                    } else {
-                        resolve(this_.container.dropIndex(columnName, indexType, name));
-                    }
+                    resolve(this_.container.dropIndex(parameterObj));
                 } catch(err) {
                     reject(convertToGSException(err));
                 }

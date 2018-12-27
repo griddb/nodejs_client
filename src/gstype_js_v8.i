@@ -1920,3 +1920,84 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
     }
     $result = obj;
 }
+
+/**
+* Typemaps for create_index()/ drop_index function : support keyword parameter ({"columnName" : str, "indexType" : int, "name" : str})
+*/
+%typemap(in, fragment = "SWIG_AsCharPtrAndSize", fragment = "cleanString") (const char* column_name, GSIndexTypeFlags index_type, const char* name) 
+        (v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, int i, int j, size_t size = 0,size_t size1 = 0, int* alloc = 0, int res,  char* v = 0) {
+    char* name;
+    if (!$input->IsObject()) {
+        SWIG_V8_Raise("Expected object property as input");
+        SWIG_fail;
+    }
+    obj = $input->ToObject();
+    keys = obj->GetOwnPropertyNames();
+    int len = (int) keys->Length();
+    //Create $1, $2, $3 with default value
+    $1 = NULL;
+    $2 = GS_INDEX_FLAG_DEFAULT;
+    $3 = NULL;
+    int allocKey;
+    int allocValue;
+    char errorMsg[60];
+    if (len > 0) {
+        for (int i = 0; i < len; i++) {
+            res = SWIG_AsCharPtrAndSize(keys->Get(i), &name, &size, &allocKey);
+            if (!SWIG_IsOK(res)) {
+                %variable_fail(res, "String", "name");
+            }
+            if (strcmp(name, "columnName") == 0) {
+                if (!obj->Get(keys->Get(i))->IsString()) {
+                    sprintf(errorMsg, "Invalid value for property %s", name);
+                    SWIG_V8_Raise(errorMsg);
+                    cleanString(name, allocKey);
+                    SWIG_fail;
+                }
+                res = SWIG_AsCharPtrAndSize(obj->Get(keys->Get(i)), &v, &size1, &allocValue);
+                if (!SWIG_IsOK(res)) {
+                    %variable_fail(res, "String", "value");
+                }
+                $1 = strdup(v);
+                cleanString(v, allocValue);
+            } else if (strcmp(name, "indexType") == 0) {
+                if (!obj->Get(keys->Get(i))->IsInt32()) {
+                    sprintf(errorMsg, "Invalid value for property %s", name);
+                    SWIG_V8_Raise(errorMsg);
+                    cleanString(name, allocKey);
+                    SWIG_fail;
+                }
+                $2 = obj->Get(keys->Get(i))->IntegerValue();
+            } else if (strcmp(name, "name") == 0) {
+                if (!obj->Get(keys->Get(i))->IsString()) {
+                    sprintf(errorMsg, "Invalid value for property %s", name);
+                    SWIG_V8_Raise(errorMsg);
+                    cleanString(name, allocKey);
+                    SWIG_fail;
+                }
+                res = SWIG_AsCharPtrAndSize(obj->Get(keys->Get(i)), &v, &size1, &allocValue);
+                if (!SWIG_IsOK(res)) {
+                    %variable_fail(res, "String", "value");
+                }
+                $3 = strdup(v);
+                cleanString(v, allocValue);
+            } else {
+                sprintf(errorMsg, "Invalid property %s", name);
+                cleanString(name, allocKey);
+                SWIG_V8_Raise(errorMsg);
+                SWIG_fail;
+            }
+            cleanString(name, allocKey);
+        }
+    }
+}
+
+%typemap(freearg) (const char* column_name, GSIndexTypeFlags index_type, const char* name) {
+    if ($1) {
+        free((void*) $1);
+    }
+
+    if ($3) {
+        free((void*) $3);
+    }
+}
