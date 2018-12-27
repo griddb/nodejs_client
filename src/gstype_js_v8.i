@@ -370,6 +370,28 @@ static void cleanString(const GSChar* string, int alloc){
 }
 
 /**
+ * Support convert type from object to long.
+ */
+%fragment("convertObjectToLong", "header") {
+static bool convertObjectToLong(v8::Local<v8::Value> value, long* longVal) {
+    int checkConvert = 0;
+    if (value->IsInt32()) {
+        //input can be integer
+        long int intVal;
+        checkConvert = SWIG_AsVal_long(value, &intVal);
+        if (!SWIG_IsOK(checkConvert)) {
+            return false;
+        }
+        *longVal = intVal;
+        //When input value is integer, it should be between -9007199254740992(-2^53)/9007199254740992(2^53).
+        return (-9007199254740992 <= intVal && 9007199254740992 >= intVal);
+    } else {
+        return false;
+    }
+}
+}
+
+/**
  * Support convert type from object to Float. input in target language can be :
  * float or integer
  */
@@ -485,7 +507,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
  */
 %fragment("convertToRowKeyFieldWithType", "header", fragment = "SWIG_AsCharPtrAndSize"
         , fragment = "convertObjectToBool", fragment = "convertObjectToGSTimestamp"
-        ,fragment = "convertObjectToDouble"
+        , fragment = "convertObjectToDouble", fragment = "convertObjectToLong"
         , fragment = "convertObjectToStringArray", fragment = "cleanString") {
     static bool convertToRowKeyFieldWithType(griddb::Field &field, v8::Local<v8::Value> value, GSType type) {
         size_t size = 0;
@@ -526,10 +548,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 break;
 
             case GS_TYPE_LONG:
-                checkConvert = SWIG_AsVal_long(value, &field.value.asLong);
-                if (!SWIG_IsOK(checkConvert)) {
-                    return false;
-                }
+                return convertObjectToLong(value, &field.value.asLong);
                 break;
             case GS_TYPE_TIMESTAMP:
                 return convertObjectToGSTimestamp(value, &field.value.asTimestamp);
@@ -547,7 +566,8 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
         fragment = "convertObjectToDouble", fragment = "convertObjectToGSTimestamp", 
         fragment = "SWIG_AsVal_bool", fragment = "convertObjectToBool", 
         fragment = "double_equals", fragment = "convertObjectToFloat", 
-        fragment = "convertObjectToStringArray", fragment = "cleanString") {
+        fragment = "convertObjectToStringArray", fragment = "cleanString",
+        fragment = "convertObjectToLong") {
     static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> value, GSType type) {
         int8_t byteVal;
         int16_t shortVal;
@@ -609,8 +629,8 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 cleanString(stringVal, alloc);
                 break;
             case GS_TYPE_LONG:
-                checkConvert = SWIG_AsVal_long(value, &longVal);
-                if (!SWIG_IsOK(checkConvert)) {
+                vbool = convertObjectToLong(value, &longVal);
+                if (!vbool) {
                     return false;
                 }
                 ret = gsSetRowFieldByLong(row, column, longVal);
@@ -812,8 +832,8 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                     return false;
                 }
                 for (i = 0; i < size; i++) {
-                    checkConvert = SWIG_AsVal_long(arr->Get(i), &longArrVal[i]);
-                    if (!SWIG_IsOK(checkConvert)) {
+                    vbool = convertObjectToLong(arr->Get(i), &longArrVal[i]);
+                    if (!vbool) {
                         free((void*)longArrVal);
                         longArrVal = NULL;
                         return false;
