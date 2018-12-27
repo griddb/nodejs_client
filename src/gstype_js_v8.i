@@ -897,87 +897,6 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 }
 
 /**
-* Typemaps for put_container() function
-*/
-%typemap(in, fragment = "SWIG_AsCharPtrAndSize") (const GSColumnInfo* props, int propsCount)
-(v8::Local<v8::Array> arr, v8::Local<v8::Array> colInfo, v8::Local<v8::Array> keys, size_t size = 0, int* alloc = 0, int res, char* v = 0) {
-//Convert js arrays into GSColumnInfo properties
-    if (!$input->IsArray()) {
-        SWIG_V8_Raise("Expected array as input");
-        SWIG_fail;
-    }
-    arr = v8::Local<v8::Array>::Cast($input);
-    $2 = (int) arr->Length();
-    $1 = NULL;
-    if ($2 > 0) {
-        $1 = (GSColumnInfo *) malloc($2*sizeof(GSColumnInfo));
-        alloc = (int*) malloc($2*sizeof(int));
-        if ($1 == NULL || alloc == NULL) {
-            SWIG_V8_Raise("Memory allocation error");
-            SWIG_fail;
-        }
-        memset($1, 0x0, $2*sizeof(GSColumnInfo));
-        memset(alloc, 0x0, $2*sizeof(int));
-
-        for (int i = 0; i < $2; i++) {
-            if (!(arr->Get(i))->IsArray()) {
-                SWIG_V8_Raise("Expected array property as ColumnInfo element");
-                SWIG_fail;
-            }
-
-            colInfo = v8::Local<v8::Array>::Cast(arr->Get(i));
-            if ((int)colInfo->Length() < 2 || (int)colInfo->Length() > 3) {
-                SWIG_V8_Raise("Expected 2 or 3 elements for ColumnInfo property");
-                SWIG_fail;
-            }
-
-            res = SWIG_AsCharPtrAndSize(colInfo->Get(0), &v, &size, &alloc[i]);
-            if (!SWIG_IsOK(res)) {
-                %variable_fail(res, "String", "Column name");
-            }
-
-            if (!colInfo->Get(1)->IsInt32()) {
-                SWIG_V8_Raise("Expected Integer as type of Column type");
-                SWIG_fail;
-            }
-
-            $1[i].name = v;
-            $1[i].type = (int) colInfo->Get(1)->Uint32Value();
-            
-%#if GS_COMPATIBILITY_SUPPORT_3_5
-            if ((int)colInfo->Length() == 3) {
-                v8::Local<v8::Value> options = colInfo->Get(2);
-
-                if (!options->IsInt32()) {
-                    SWIG_V8_Raise("Expected Integer as type of Column options");
-                    SWIG_fail;
-                }
-
-                $1[i].options = (int) options->Uint32Value();
-            }
-%#endif
-        }
-    }
-}
-
-%typemap(typecheck) (const GSColumnInfo* props, int propsCount) {
-    $1 = (!$input->IsArray()) ? 1 : 0;
-}
-
-%typemap(freearg, fragment = "cleanString") (const GSColumnInfo* props, int propsCount) (int i) {
-    if ($1) {
-        for (i = 0; i < $2; i++) {
-            cleanString($1[i].name, alloc$argnum[i]);
-        }
-        free((void *) $1);
-    }
-
-    if (alloc$argnum) {
-        free(alloc$argnum);
-    }
-}
-
-/**
 * Typemaps for set_properties() function
 */
 %typemap(in, fragment = "SWIG_AsCharPtrAndSize") (const GSPropertyEntry* props, int propsCount)
@@ -2026,5 +1945,163 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
             }
             cleanString(name, allocKey);
         }
+    }
+}
+
+/**
+* Typemaps for ContainerInfo : support keyword parameter ({"name" : str, "columnInfoList" : array, "type" : str, 'rowKey':boolean})
+*/
+%typemap(in, fragment = "SWIG_AsCharPtrAndSize", fragment = "cleanString") (const GSChar* name, const GSColumnInfo* props, 
+        int propsCount, GSContainerType type, bool row_key, griddb::ExpirationInfo* expiration)
+        (v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, int i, int j, size_t size = 0,size_t size1 = 0, int* alloc = 0, int res,  char* v = 0) {
+    char* name;
+    if (!$input->IsObject()) {
+        SWIG_V8_Raise("Expected object property as input");
+        SWIG_fail;
+    }
+    obj = $input->ToObject();
+    keys = obj->GetOwnPropertyNames();
+    int len = (int) keys->Length();
+    //Create $1, $2, $3, $3, $4, $5, $6 with default value
+    $1 = NULL;
+    $2 = NULL;
+    $3 = NULL;
+    $4 = NULL;
+    $5 = NULL;
+    $6 = NULL;
+    int allocKey;
+    int allocValue;
+    char errorMsg[60];
+    v8::Local<v8::Array> arr;
+    v8::Local<v8::Array> colInfo;
+    bool boolVal, vbool;
+    griddb::ExpirationInfo* expiration;
+    if (len > 0) {
+        for (int i = 0; i < len; i++) {
+            res = SWIG_AsCharPtrAndSize(keys->Get(i), &name, &size, &allocKey);
+            if (!SWIG_IsOK(res)) {
+                %variable_fail(res, "String", "name");
+            }
+            if (strcmp(name, "name") == 0) {
+                if (!obj->Get(keys->Get(i))->IsString()) {
+                    sprintf(errorMsg, "Invalid value for property %s", name);
+                    SWIG_V8_Raise(errorMsg);
+                    cleanString(name, allocKey);
+                    SWIG_fail;
+                }
+                res = SWIG_AsCharPtrAndSize(obj->Get(keys->Get(i)), &v, &size1, &allocValue);
+                if (!SWIG_IsOK(res)) {
+                    sprintf(errorMsg, "Memory allocation error for property %s", name);
+                    SWIG_V8_Raise(errorMsg);
+                    cleanString(name, allocKey);
+                    SWIG_fail;
+                }
+                $1 = strdup(v);
+                cleanString(v, allocValue);
+            } else if (strcmp(name, "columnInfoList") == 0) {
+                if (!obj->Get(keys->Get(i))->IsArray()) {
+                    sprintf(errorMsg, "Expected array as input for property %s", name);
+                    SWIG_V8_Raise(errorMsg);
+                    cleanString(name, allocKey);
+                    SWIG_fail;
+                }
+                arr = v8::Local<v8::Array>::Cast(obj->Get(keys->Get(i)));
+                $3 = (int) arr->Length();
+                    if ($3 > 0) {
+                        $2 = (GSColumnInfo *) malloc($3*sizeof(GSColumnInfo));
+                        alloc = (int*) malloc($3*sizeof(int));
+                        if ($2 == NULL || alloc == NULL) {
+                            SWIG_V8_Raise("Memory allocation error");
+                            SWIG_fail;
+                        }
+                        memset($2, 0x0, $3*sizeof(GSColumnInfo));
+                        memset(alloc, 0x0, $3*sizeof(int));
+
+                        for (int j = 0; j < $3; j++) {
+                            if (!(arr->Get(j))->IsArray()) {
+                                SWIG_V8_Raise("Expected array property as ColumnInfo element");
+                                SWIG_fail;
+                            }
+                            colInfo = v8::Local<v8::Array>::Cast(arr->Get(j));
+                            if ((int)colInfo->Length() < 2 || (int)colInfo->Length() > 3) {
+                                SWIG_V8_Raise("Expected 2 or 3 elements for ColumnInfo property");
+                                SWIG_fail;
+                            }
+
+                            res = SWIG_AsCharPtrAndSize(colInfo->Get(0), &v, &size, &alloc[j]);
+                            if (!SWIG_IsOK(res)) {
+                                %variable_fail(res, "String", "Column name");
+                            }
+
+                            if (!colInfo->Get(1)->IsInt32()) {
+                                SWIG_V8_Raise("Expected Integer as type of Column type");
+                                SWIG_fail;
+                            }
+                            $2[j].name = v;
+                            $2[j].type = (int) colInfo->Get(1)->Uint32Value();
+
+%#if GS_COMPATIBILITY_SUPPORT_3_5
+                            if ((int)colInfo->Length() == 3) {
+                                v8::Local<v8::Value> options = colInfo->Get(2);
+                                if (!options->IsInt32()) {
+                                    SWIG_V8_Raise("Expected Integer as type of Column options");
+                                    SWIG_fail;
+                                }
+                                $2[j].options = (int) options->Uint32Value();
+                            }
+%#endif
+                        }
+                    }
+            } else if (strcmp(name, "type") == 0) {
+                if (!obj->Get(keys->Get(i))->IsInt32()) {
+                    sprintf(errorMsg, "Invalid value for property %s", name);
+                    SWIG_V8_Raise(errorMsg);
+                    cleanString(name, allocKey);
+                    cleanString(v, allocValue);
+                    SWIG_fail;
+                }
+                $4 = obj->Get(keys->Get(i))->IntegerValue();
+            } else if (strcmp(name, "rowKey") == 0) {
+                vbool = convertObjectToBool(obj->Get(keys->Get(i)), &boolVal);
+                if (!vbool) {
+                    sprintf(errorMsg, "Invalid value for property %s", name);
+                    SWIG_V8_Raise(errorMsg);
+                    cleanString(name, allocKey);
+                    SWIG_fail;
+                }
+                $5 = boolVal;
+            } else if (strcmp(name, "expiration") == 0) {
+                 res = SWIG_ConvertPtr(obj->Get(keys->Get(i)), (void**)&expiration, $descriptor(griddb::ExpirationInfo*), 0 | 0 );
+                 if (!SWIG_IsOK(res)) {
+                     sprintf(errorMsg, "Invalid value for property %s", name);
+                     SWIG_V8_Raise(errorMsg);
+                     cleanString(name, allocKey);
+                     SWIG_fail; 
+                 }
+                 $6 = (griddb::ExpirationInfo *) expiration;
+            } else {
+                cleanString(name, allocKey);
+                SWIG_V8_Raise(errorMsg);
+                SWIG_fail;
+            }
+            cleanString(name, allocKey);
+        }
+    }
+}
+
+%typemap(freearg) (const GSChar* name, const GSColumnInfo* props,
+        int propsCount, GSContainerType type, bool row_key, griddb::ExpirationInfo* expiration) {
+    if ($1) {
+        delete $1;
+    }
+    if ($2) {
+        for (int i = 0; i < $3; i++) {
+            cleanString($2[i].name, alloc$argnum[i]);
+        }
+        free((void *) $2);
+    }
+
+    if (alloc$argnum) {
+        free(alloc$argnum);
     }
 }
