@@ -1498,7 +1498,7 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
 /**
  * Typemaps for Store.multi_put
  */
-%typemap(in, fragment = "convertToRowKeyFieldWithType", fragment = "SWIG_AsCharPtrAndSize") (GSRow*** listRow, const int *listRowContainerCount, const char ** listContainerName, size_t containerCount)
+%typemap(in, fragment = "convertToRowKeyFieldWithType", fragment = "SWIG_AsCharPtrAndSize", fragment = "cleanString") (GSRow*** listRow, const int *listRowContainerCount, const char ** listContainerName, size_t containerCount)
 (v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, v8::Local<v8::Array> arr, int res = 0, v8::Local<v8::Array> rowArr,
 size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
     if (!$input->IsObject()) {
@@ -1508,6 +1508,7 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
     $1 = NULL;
     $2 = NULL;
     $3 = NULL;
+    $4 = 0;
     obj = $input->ToObject();
     keys = obj->GetOwnPropertyNames();
     $4 = (size_t) keys->Length();
@@ -1533,8 +1534,8 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
             if (!SWIG_IsOK(res)) {
                 %variable_fail(res, "String", "containerName");
             }
-            $3[i] = v;
-
+            $3[i] = strdup(v);
+            cleanString(v, alloc[i]);
             // Get row
             if (!(obj->Get(keys->Get(i)))->IsArray()) {
                 SWIG_V8_Raise("Expected an array as rowList");
@@ -1563,10 +1564,10 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
                     if (!(convertToFieldWithType($1[i][j], k, rowArr->Get(k), typeArr[k]))) {
                         char errorMsg[60];
                         sprintf(errorMsg, "Invalid value for column %d, type should be : %d", k, typeArr[k]);
-                        SWIG_V8_Raise(errorMsg);
-                        SWIG_fail;
                         delete containerInfoTmp;
                         free((void *) typeArr);
+                        SWIG_V8_Raise(errorMsg);
+                        SWIG_fail;
                     }
                 }
             }
@@ -1587,7 +1588,7 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
     if ($2) delete $2;
     if ($3) {
         for (int i = 0; i < $4; i++) {
-            cleanString($3[i], alloc$argnum[i]);
+            free((void *) $3[i]);
         }
         free((void *) $3);
     }
