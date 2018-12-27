@@ -4,30 +4,30 @@ var fs     = require('fs');
 var factory = griddb.StoreFactory.getInstance();
 var store = factory.getStore({
                         "host": process.argv[2], 
-                        "port": process.argv[3], 
-                        "cluster_name": process.argv[4], 
+                        "port": parseInt(process.argv[3]),
+                        "clusterName": process.argv[4], 
                         "username": process.argv[5], 
                         "password": process.argv[6]});
 
-var conInfo = new griddb.ContainerInfo("col01",
-                   [
-                        ["name", griddb.GS_TYPE_STRING],
-                        ["status", griddb.GS_TYPE_BOOL],
-                        ["count", griddb.GS_TYPE_LONG],
-                        ["lob", griddb.GS_TYPE_BLOB]
-                   ], griddb.GS_CONTAINER_COLLECTION,
-                   true)
+var conInfo = new griddb.ContainerInfo({'name' : "col01",
+    'columnInfoList' : [
+            ["name", griddb.Type.STRING],
+            ["status", griddb.Type.BOOL],
+            ["count", griddb.Type.LONG],
+            ["lob", griddb.Type.BLOB]
+        ], 
+        'type' : griddb.ContainerType.COLLECTION, 'rowKey' : true});
 
 var col2;
 store.putContainer(conInfo, false)
 	.then(col => {
 	 	col2 = col;
-		col.createIndex("count", griddb.GS_INDEX_FLAG_DEFAULT);
+	 	col.createIndex({'columnName' : 'count', 'indexType': griddb.IndexType.DEFAULT});
 		return col;
   	})
 	.then(col => {
 		col.setAutoCommit(false);
-		col.put(["name01", false, 1, "ABCDEFGHIJ"]);
+		col.put(["name01", false, 1, Buffer.from([65, 66, 67, 68, 69, 70, 71, 72, 73, 74])]);
 		return col;
 	})
 	.then(col => {
@@ -45,10 +45,14 @@ store.putContainer(conInfo, false)
 		col2.commit();
 	})
 	.catch(err => {
-		console.log(err.what());
-		for (var i = 0; i < err.getErrorStackSize(); i++) {
-			console.log("[", i, "]");
-			console.log(err.getErrorCode(i));
-			console.log(err.getMessage(i));
+		if (err.constructor.name == "_exports_GSException") {
+			console.log(err.what());
+			for (var i = 0; i < err.getErrorStackSize(); i++) {
+				console.log("[", i, "]");
+				console.log(err.getErrorCode(i));
+				console.log(err.getMessage(i));
+			}
+		} else {
+			console.log(err);
 		}
 	});

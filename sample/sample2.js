@@ -5,18 +5,18 @@ var fs     = require('fs');
 var factory = griddb.StoreFactory.getInstance();
 var store = factory.getStore({
                         "host": process.argv[2], 
-                        "port": process.argv[3], 
-                        "cluster_name": process.argv[4], 
+                        "port": parseInt(process.argv[3]),
+                        "clusterName": process.argv[4], 
                         "username": process.argv[5], 
                         "password": process.argv[6]});
 
-var conInfo = new griddb.ContainerInfo("point01",
-                   [
-                        ["timestamp", griddb.GS_TYPE_TIMESTAMP],
-                        ["active", griddb.GS_TYPE_BOOL],
-                        ["voltage", griddb.GS_TYPE_DOUBLE]
-                   ], griddb.GS_CONTAINER_TIME_SERIES,
-                   true)
+var conInfo = new griddb.ContainerInfo({'name' : "point01",
+    'columnInfoList' : [
+            ["timestamp", griddb.GS_TYPE_TIMESTAMP],
+            ["active", griddb.GS_TYPE_BOOL],
+            ["voltage", griddb.GS_TYPE_DOUBLE]
+        ], 
+        'type' : griddb.ContainerType.TIME_SERIES, 'rowKey' : true});
 
 store.putContainer(conInfo, false)
 	.then(ts => {

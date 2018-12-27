@@ -5,8 +5,8 @@ var fs     = require('fs');
 var factory = griddb.StoreFactory.getInstance();
 var store = factory.getStore({
                         "host": process.argv[2], 
-                        "port": process.argv[3], 
-                        "cluster_name": process.argv[4], 
+                        "port": parseInt(process.argv[3]),
+                        "clusterName": process.argv[4], 
                         "username": process.argv[5], 
                         "password": process.argv[6]});
 
