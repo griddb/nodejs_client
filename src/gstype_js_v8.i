@@ -444,9 +444,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     size_t size = 0;
     int res;
     char* v = 0;
-    bool vbool;
     int alloc;
-    char s[30];
     GSBool retConvertTimestamp;
 
     if (value->IsBoolean()) {
@@ -493,8 +491,8 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
         size_t size = 0;
         int res;
         char* v = 0;
-        bool vbool;
         int alloc;
+        int checkConvert = 0;
 
         field.type = type;
         if (value->IsNull() || value->IsUndefined()) {
@@ -505,15 +503,9 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
             return false;
 %#endif
         }
-        GSChar *mydata;
-        void *blobData;
-        int year, month, day, hour, minute, second, milliSecond;
-        int checkConvert = 0;
-        GSBool retConvertTimestamp;
-        int tmpInt;
 
         switch (type) {
-            case (GS_TYPE_STRING):
+            case GS_TYPE_STRING:
                 if (!value->IsString()) {
                     return false;
                 }
@@ -526,20 +518,20 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 }
                 cleanString(v, alloc);
                 break;
-            case (GS_TYPE_INTEGER):
+            case GS_TYPE_INTEGER:
                 if (!value->IsInt32()) {
                     return false;
                 }
                 field.value.asInteger = value->IntegerValue();
                 break;
 
-            case (GS_TYPE_LONG):
+            case GS_TYPE_LONG:
                 checkConvert = SWIG_AsVal_long(value, &field.value.asLong);
                 if (!SWIG_IsOK(checkConvert)) {
                     return false;
                 }
                 break;
-            case (GS_TYPE_TIMESTAMP):
+            case GS_TYPE_TIMESTAMP:
                 return convertObjectToGSTimestamp(value, &field.value.asTimestamp);
                 break;
             default:
@@ -605,7 +597,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 
         int checkConvert = 0;
         switch (type) {
-            case (GS_TYPE_STRING):
+            case GS_TYPE_STRING:
                 if (!value->IsString()) {
                     return false;
                 }
@@ -616,21 +608,21 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 ret = gsSetRowFieldByString(row, column, stringVal);
                 cleanString(stringVal, alloc);
                 break;
-            case (GS_TYPE_LONG):
+            case GS_TYPE_LONG:
                 checkConvert = SWIG_AsVal_long(value, &longVal);
                 if (!SWIG_IsOK(checkConvert)) {
                     return false;
                 }
                 ret = gsSetRowFieldByLong(row, column, longVal);
                 break;
-            case (GS_TYPE_BOOL):
+            case GS_TYPE_BOOL:
                 vbool = convertObjectToBool(value, (bool*)&boolVal);
                 if (!vbool) {
                     return false;
                 }
                 ret = gsSetRowFieldByBool(row, column, boolVal);
                 break;
-            case (GS_TYPE_BYTE):
+            case GS_TYPE_BYTE:
                 if (!value->IsInt32()) {
                     return false;
                 }
@@ -640,7 +632,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 ret = gsSetRowFieldByByte(row, column, value->IntegerValue());
                 break;
 
-            case (GS_TYPE_SHORT):
+            case GS_TYPE_SHORT:
                 if (!value->IsInt32()) {
                     return false;
                 }
@@ -651,34 +643,34 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 ret = gsSetRowFieldByShort(row, column, value->IntegerValue());
                 break;
 
-            case (GS_TYPE_INTEGER):
+            case GS_TYPE_INTEGER:
                 if (!value->IsInt32()) {
                     return false;
                 }
                 ret = gsSetRowFieldByInteger(row, column, value->IntegerValue());
                 break;
-            case (GS_TYPE_FLOAT):
+            case GS_TYPE_FLOAT:
                 vbool = convertObjectToFloat(value, &floatVal);
                 if (!vbool) {
                     return false;
                 }
                 ret = gsSetRowFieldByFloat(row, column, floatVal);
                 break;
-            case (GS_TYPE_DOUBLE):
+            case GS_TYPE_DOUBLE:
                 vbool = convertObjectToDouble(value, &doubleVal);
                 if (!vbool) {
                     return false;
                 }
                 ret = gsSetRowFieldByDouble(row, column, doubleVal);
                 break;
-            case (GS_TYPE_TIMESTAMP):
+            case GS_TYPE_TIMESTAMP:
                 vbool = convertObjectToGSTimestamp(value, &timestampVal);
                 if (!vbool) {
                     return false;
                 }
                 ret = gsSetRowFieldByTimestamp(row, column, timestampVal);
                 break;
-            case (GS_TYPE_BLOB):
+            case GS_TYPE_BLOB:
                 if (!node::Buffer::HasInstance(value)) {
                     return false;
                 }
@@ -689,7 +681,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 blobVal.size = size;
                 ret = gsSetRowFieldByBlob(row, column, (const GSBlob *)&blobVal);
                 break;
-            case (GS_TYPE_STRING_ARRAY):
+            case GS_TYPE_STRING_ARRAY:
                 stringArrVal = convertObjectToStringArray(value, &length);
                 if (stringArrVal == NULL) {
                     return false;
@@ -705,7 +697,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                     free(const_cast<GSChar**> (stringArrVal));
                 }
                 break;
-            case (GS_TYPE_GEOMETRY):
+            case GS_TYPE_GEOMETRY:
                 if (!value->IsString()) {
                  return false;
                 }
@@ -717,7 +709,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 ret = gsSetRowFieldByGeometry(row, column, geometryVal);
                 cleanString(geometryVal, alloc);
                 break;
-            case (GS_TYPE_INTEGER_ARRAY):
+            case GS_TYPE_INTEGER_ARRAY:
                 if (!value->IsArray()) {
                     return false;
                 }
@@ -1765,7 +1757,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
     GSType mType;
     GSResult ret;
     switch (typeTmp$argnum) {
-        case (GS_ROW_SET_CONTAINER_ROWS):
+        case GS_ROW_SET_CONTAINER_ROWS:
             if (hasNextRowTmp$argnum == false) {
                 SWIGV8_NULL();
             } else {
@@ -1788,13 +1780,13 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
                 $result = obj;
             }
             break;
-        case (GS_ROW_SET_AGGREGATION_RESULT):
+        case GS_ROW_SET_AGGREGATION_RESULT:
             if (hasNextRowTmp$argnum == true) {
                 value = SWIG_V8_NewPointerObj((void *)aggResultTmp$argnum, $descriptor(griddb::AggregationResult *), 0);
                 $result = value;
             }
             break;
-        case (GS_ROW_SET_QUERY_ANALYSIS):
+        case GS_ROW_SET_QUERY_ANALYSIS:
             if (hasNextRowTmp$argnum == true) {
                 value = SWIG_V8_NewPointerObj((void *)queryAnalysisTmp$argnum, $descriptor(griddb::QueryAnalysisEntry *), 0);
                 $result = value;
