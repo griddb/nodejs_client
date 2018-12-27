@@ -500,57 +500,57 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
         , fragment = "convertObjectToBool", fragment = "convertObjectToGSTimestamp"
         , fragment = "convertObjectToDouble", fragment = "convertObjectToLong"
         , fragment = "convertObjectToStringArray", fragment = "cleanString") {
-    static bool convertToRowKeyFieldWithType(griddb::Field &field, v8::Local<v8::Value> value, GSType type) {
-        size_t size = 0;
-        int res;
-        char* v = 0;
-        int alloc;
-        int checkConvert = 0;
+static bool convertToRowKeyFieldWithType(griddb::Field &field, v8::Local<v8::Value> value, GSType type) {
+    size_t size = 0;
+    int res;
+    char* v = 0;
+    int alloc;
+    int checkConvert = 0;
 
-        field.type = type;
-        if (value->IsNull() || value->IsUndefined()) {
+    field.type = type;
+
+    if (value->IsNull() || value->IsUndefined()) {
 %#if GS_COMPATIBILITY_SUPPORT_3_5
-            field.type = GS_TYPE_NULL;
-            return true;
-%#else
-            return false;
-%#endif
-        }
-
-        switch (type) {
-            case GS_TYPE_STRING:
-                if (!value->IsString()) {
-                    return false;
-                }
-                res = SWIG_AsCharPtrAndSize(value, &v, &size, &alloc);
-                if (!SWIG_IsOK(res)) {
-                   return false;
-                }
-                if (v && size) {
-                    field.value.asString = strdup(v);
-                }
-                cleanString(v, alloc);
-                break;
-            case GS_TYPE_INTEGER:
-                if (!value->IsInt32()) {
-                    return false;
-                }
-                field.value.asInteger = value->IntegerValue();
-                break;
-
-            case GS_TYPE_LONG:
-                return convertObjectToLong(value, &field.value.asLong);
-                break;
-            case GS_TYPE_TIMESTAMP:
-                return convertObjectToGSTimestamp(value, &field.value.asTimestamp);
-                break;
-            default:
-                //Not support for now
-                return false;
-                break;
-        }
+        field.type = GS_TYPE_NULL;
         return true;
+%#else
+        return false;
+%#endif
     }
+
+    switch (type) {
+        case GS_TYPE_STRING:
+            if (!value->IsString()) {
+                return false;
+            }
+            res = SWIG_AsCharPtrAndSize(value, &v, &size, &alloc);
+            if (!SWIG_IsOK(res)) {
+               return false;
+            }
+            if (v && size) {
+                field.value.asString = strdup(v);
+            }
+            cleanString(v, alloc);
+            break;
+        case GS_TYPE_INTEGER:
+            if (!value->IsInt32()) {
+                return false;
+            }
+            field.value.asInteger = value->IntegerValue();
+            break;
+        case GS_TYPE_LONG:
+            return convertObjectToLong(value, &field.value.asLong);
+            break;
+        case GS_TYPE_TIMESTAMP:
+            return convertObjectToGSTimestamp(value, &field.value.asTimestamp);
+            break;
+        default:
+            //Not support for now
+            return false;
+            break;
+    }
+    return true;
+}
 }
 
 %fragment("convertToFieldWithType", "header", fragment = "SWIG_AsCharPtrAndSize",
@@ -921,7 +921,7 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
 * Typemaps for set_properties() function
 */
 %typemap(in, fragment = "SWIG_AsCharPtrAndSize") (const GSPropertyEntry* props, int propsCount)
-(v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, int i, int j, size_t size = 0, int* alloc = 0, int res, char* v = 0) {
+(v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, int j, size_t size = 0, int* alloc = 0, int res, char* v = 0) {
     if (!$input->IsObject()) {
         SWIG_V8_Raise("Expected object property as input");
         SWIG_fail;
@@ -1800,12 +1800,6 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
         obj->Set(i, value);
     }
     $result = obj;
-}
-
-%typemap(freearg) (griddb::Field **keys, size_t* keyCount) {
-    if ($1) {
-        free((void*)* $1);
-    }
 }
 
 /**
