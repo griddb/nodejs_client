@@ -451,16 +451,6 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
         if (!SWIG_IsOK(res)) {
            return false;
         }
-        // error when string len is too short
-        if (strlen(v) < 19) {
-            if (alloc != SWIG_OLDOBJ) {
-                delete [] v;
-            }
-            return false;
-        }
-        // this is for convert javascript's string datetime (YYYY-MM-DDTHH:mm:ss:sssZ)
-        // to griddb's string datetime (YYYY-MM-DDTHH:mm:ss.sssZ)
-        v[19] = '.';
 
         retConvertTimestamp = gsParseTime(v, timestamp);
         if (alloc != SWIG_OLDOBJ) {
