@@ -19,6 +19,8 @@
 #include <Field.h>
 #include <ctime>
 #include <limits>
+#include <node_buffer.h>
+#include <nan.h>
 %}
 
 // rename all method to camel cases
@@ -103,7 +105,7 @@ static v8::Handle<v8::Value> convertFieldToObject(GSValue* value, GSType type, b
             return SWIGV8_NULL();
 %#endif
         case GS_TYPE_BLOB:
-            return SWIGV8_STRING_NEW2((GSChar *)value->asBlob.data, value->asBlob.size);
+            return Nan::CopyBuffer((char *)value->asBlob.data, value->asBlob.size).ToLocalChecked();
         case GS_TYPE_BOOL:
             return SWIGV8_BOOLEAN_NEW((bool)value->asBool);
         case GS_TYPE_INTEGER:
@@ -677,25 +679,15 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 ret = gsSetRowFieldByTimestamp(row, column, timestampVal);
                 break;
             case (GS_TYPE_BLOB):
-                if (!value->IsString()) {
+                if (!node::Buffer::HasInstance(value)) {
                     return false;
                 }
-                res = SWIG_AsCharPtrAndSize(value, &v, &size, &alloc);
-                if (!SWIG_IsOK(res)) {
-                   return false;
-                }
-                int fixSize;
-                //Remove null character
-                fixSize = size -1;
-                mydata = (GSChar*)malloc(sizeof(GSChar) * fixSize);
-                memcpy(mydata, v, fixSize);
-                blobVal.data = mydata;
-                blobVal.size = fixSize;
+                v = (char*) node::Buffer::Data(value);
+                size = node::Buffer::Length (value);
+
+                blobVal.data = v;
+                blobVal.size = size;
                 ret = gsSetRowFieldByBlob(row, column, (const GSBlob *)&blobVal);
-                if (mydata) {
-                    free((void*)mydata);
-                }
-                cleanString(v, alloc);
                 break;
             case (GS_TYPE_STRING_ARRAY):
                 stringArrVal = convertObjectToStringArray(value, &length);

@@ -16,6 +16,7 @@ INCLUDES = -Iinclude -Isrc
 
 INCLUDES_JS = $(INCLUDES)
 INCLUDES_JS += -I/usr/include/node
+INCLUDES_JS += -Inode_modules/nan
 
 CPPFLAGS_JS   = $(CPPFLAGS) $(INCLUDES_JS)	\
 				-DNODE_GYP_MODULE_NAME=griddb	\
