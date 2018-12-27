@@ -23,6 +23,17 @@ class Store {
     constructor(store) {
         this.store = store;
     }
+    get partitionController() {
+        return this.store.partitionController;
+    }
+
+    set timestampOutput(value) {
+        this.store.timestamp_output_with_float = value;
+    }
+
+    get timestampOutput() {
+        return this.store.timestamp_output_with_float;
+    }
 
     // Async functions
     putContainer(info, modifiable = false) {
@@ -79,8 +90,78 @@ class Store {
         });
     }
 
-    // Sync functions
+    fetchAll(queryList) {
+        var queryListTmp = [];
+        for (var i = 0; i < queryList.length; i++) {
+            queryListTmp.push(queryList[i].query);
+        }
+        var this_ = this;
+        return new Promise(function(resolve, reject) {
+            setTimeout(function() {
+                try {
+                    resolve(this_.store.fetchAll(queryListTmp));
+                } catch(err) {
+                    reject(convertToGSException(err));
+                }
+            }, 0);
+        });
+    }
 
+    multiPut(containerEntry) {
+        var this_ = this;
+        return new Promise(function(resolve, reject) {
+            setTimeout(function() {
+                try {
+                    resolve(this_.store.multiPut(containerEntry));
+                } catch(err) {
+                    reject(convertToGSException(err));
+                }
+            }, 0);
+        });
+    }
+
+    multiGet(predicateEntry) {
+        var this_ = this;
+        return new Promise(function(resolve, reject) {
+            setTimeout(function() {
+                try {
+                    return resolve(this_.store.multiGet(predicateEntry));
+                } catch(err) {
+                    reject(convertToGSException(err));
+                }
+            }, 0);
+        });
+    }
+
+    close(allRelated = false) {
+        var this_ = this;
+        return new Promise(function(resolve, reject) {
+            setTimeout(function() {
+                try {
+                    resolve(this_.store.close(allRelated));
+                } catch(err) {
+                    reject(convertToGSException(err));
+                }
+            }, 0);
+        });
+    }
+
+    // Sync functions
+    createRowKeyPredicate(type) {
+        try {
+            return this.store.createRowKeyPredicate(type);
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
+    }
+
+    closeSync(allRelated = false) {
+        try {
+            this.store.close(allRelated);
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
+    }
 };
 
 class Container {
@@ -90,6 +171,14 @@ class Container {
 
     get type() {
         return this.container.type;
+    }
+
+    set timestampOutput(value) {
+        this.container.timestamp_output_with_float = value;
+    }
+
+    get timestampOutput() {
+        return this.container.timestamp_output_with_float;
     }
 
     // Async functions
@@ -206,6 +295,19 @@ class Container {
         });
     }
 
+    multiPut(rowList) {
+        var this_ = this;
+        return new Promise(function(resolve, reject) {
+            setTimeout(function() {
+                try {
+                    resolve(this_.container.multiPut(rowList));
+                } catch(err) {
+                    reject(convertToGSException(err));
+                }
+            }, 0);
+        });
+    }
+
     close() {
         var this_ = this;
         return new Promise(function(resolve, reject) {
@@ -233,6 +335,14 @@ class Container {
             this.container.setAutoCommit(commitFlg);
         } catch(err) {
             reject(convertToGSException(err));
+        }
+    }
+
+    closeSync() {
+        try {
+            this.container.close();
+        } catch(err) {
+            throw(convertToGSException(err));
         }
     }
 };
@@ -285,6 +395,14 @@ class Query {
             throw(convertToGSException(err));
         }
     }
+
+    closeSync() {
+        try {
+            this.query.close();
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
+    }
 };
 
 class RowSet {
@@ -298,6 +416,14 @@ class RowSet {
 
     get type() {
         return this.rowSet.type;
+    }
+
+    set timestampOutput(value) {
+        this.rowSet.timestamp_output_with_float = value;
+    }
+
+    get timestampOutput() {
+        return this.rowSet.timestamp_output_with_float;
     }
 
     // Async functions
@@ -330,11 +456,26 @@ class RowSet {
             throw(convertToGSException(err));
         }
     }
+
+    closeSync() {
+        try {
+            this.rowSet.close();
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
+    }
 }
 
 class AggregationResult {
     constructor(aggResult) {
         this.aggResult = aggResult;
+    }
+    set timestampOutput(value) {
+        this.aggResult.timestamp_output_with_float = value;
+    }
+
+    get timestampOutput() {
+        return this.aggResult.timestamp_output_with_float;
     }
 
     // Sync function
@@ -356,6 +497,112 @@ class QueryAnalysisEntry {
     get() {
         try {
             return this.queryAnalysis.get();
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
+    }
+}
+
+class PartitionController {
+    constructor(partitionController) {
+        this.partitionController = partitionController;
+    }
+    get partitionCount() {
+        return this.partitionController.partitionCount;
+    }
+    // Async function
+    getContainerCount(partitionIndex) {
+        var this_ = this;
+        return new Promise(function(resolve, reject) {
+            setTimeout(function() {
+                try {
+                    resolve(this_.partitionController.getContainerCount(partitionIndex));
+                } catch(err) {
+                    reject(convertToGSException(err));
+                }
+            }, 0);
+        });
+    }
+    getContainerNames(partitionIndex, start, limit) {
+        var this_ = this;
+        return new Promise(function(resolve, reject) {
+            setTimeout(function() {
+                try {
+                    resolve(this_.partitionController.getContainerNames(partitionIndex, start, limit));
+                } catch(err) {
+                    reject(convertToGSException(err));
+                }
+            }, 0);
+        });
+    }
+    getPartitionIndexOfContainer(containerName) {
+        var this_ = this;
+        return new Promise(function(resolve, reject) {
+            setTimeout(function() {
+                try {
+                    resolve(this_.partitionController.getPartitionIndexOfContainer(containerName));
+                } catch(err) {
+                    reject(convertToGSException(err));
+                }
+            }, 0);
+        });
+    }
+    close() {
+        var this_ = this;
+        return new Promise(function(resolve, reject) {
+            setTimeout(function() {
+                try {
+                    resolve(this_.partitionController.close());
+                } catch(err) {
+                    reject(convertToGSException(err));
+                }
+            }, 0);
+        });
+    }
+
+    // Sync function
+    closeSync() {
+        try {
+            this.partitionController.close();
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
+    }
+}
+
+class RowKeyPredicate {
+    constructor(rowKeyPredicate) {
+        this.rowKeyPredicate = rowKeyPredicate;
+    }
+    get keyType() {
+        return this.rowKeyPredicate.keyType;
+    }
+
+    // Sync function
+    getRange() {
+        try {
+            return this.rowKeyPredicate.getRange();
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
+    }
+    setRange(start, end) {
+        try {
+            this.rowKeyPredicate.setRange(start, end);
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
+    }
+    setDistinctKeys(keys) {
+        try {
+            this.rowKeyPredicate.setDistinctKeys(keys);
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
+    }
+    getDistinctKeys() {
+        try {
+            return this.rowKeyPredicate.getDistinctKeys();
         } catch(err) {
             throw(convertToGSException(err));
         }
