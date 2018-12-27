@@ -262,7 +262,7 @@ static void cleanStringArray(GSChar** arrString, size_t size) {
 }
 
 %fragment("convertObjectToStringArray", "header",
-        fragment = "cleanStringArray") {
+        fragment = "cleanStringArray", fragment = "cleanString") {
 static GSChar** convertObjectToStringArray(v8::Local<v8::Value> value, int* size) {
     GSChar** arrString = NULL;
     size_t arraySize;
@@ -295,10 +295,7 @@ static GSChar** convertObjectToStringArray(v8::Local<v8::Value> value, int* size
         }
 
         arrString[i] = strdup(v);
-
-        if (alloc != SWIG_OLDOBJ) {
-            %delete_array(v);
-        }
+        cleanString(v, alloc);
     }
 
     return arrString;
@@ -352,6 +349,21 @@ static v8::Handle<v8::Value> convertTimestampToObject(GSTimestamp* timestamp, bo
 %#else
     return v8::Date::New(v8::Isolate::GetCurrent(), *timestamp);
 %#endif
+}
+}
+
+/**
+ * Support clean output of SWIG_AsCharPtrAndSize after used
+ */
+%fragment("cleanString", "header") {
+static void cleanString(const GSChar* string, int alloc){
+    if (!string) {
+        return;
+    }
+
+    if (alloc == SWIG_NEWOBJ) {
+        delete [] string;
+    }
 }
 }
 
@@ -424,7 +436,7 @@ static bool convertObjectToFloat(v8::Local<v8::Value> value, float* floatValPtr)
  * Support convert type from object to GSTimestamp: input in target language can be :
  * datetime object, string or float
  */
-%fragment("convertObjectToGSTimestamp", "header", fragment = "convertObjectToFloat") {
+%fragment("convertObjectToGSTimestamp", "header", fragment = "convertObjectToFloat", fragment = "cleanString") {
 static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* timestamp) {
     int year, month, day, hour, minute, second, milliSecond, microSecond;
     size_t size = 0;
@@ -453,9 +465,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
         }
 
         retConvertTimestamp = gsParseTime(v, timestamp);
-        if (alloc != SWIG_OLDOBJ) {
-            delete [] v;
-        }
+        cleanString(v, alloc);
         return (retConvertTimestamp == GS_TRUE);
     } else if (value->IsNumber()) {
         *timestamp = value->NumberValue();
@@ -476,7 +486,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 %fragment("convertToRowKeyFieldWithType", "header", fragment = "SWIG_AsCharPtrAndSize"
         , fragment = "convertObjectToBool", fragment = "convertObjectToGSTimestamp"
         ,fragment = "convertObjectToDouble"
-        , fragment = "convertObjectToStringArray") {
+        , fragment = "convertObjectToStringArray", fragment = "cleanString") {
     static bool convertToRowKeyFieldWithType(griddb::Field &field, v8::Local<v8::Value> value, GSType type) {
         size_t size = 0;
         int res;
@@ -509,14 +519,10 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 if (!SWIG_IsOK(res)) {
                    return false;
                 }
-                //mydata = (GSChar*)malloc(sizeof(GSChar) * size + 1);
-                //memset(mydata, 0x0, sizeof(GSChar) * size + 1);
-                //memcpy(mydata, v, size);
-                //field.value.asString = mydata;
-                //field.type = GS_TYPE_STRING;
                 if (v && size) {
-                    field.value.asString = (alloc == SWIG_NEWOBJ) ? v : %new_copy_array(v, size, GSChar);
+                    field.value.asString = strdup(v);
                 }
+                cleanString(v, alloc);
                 break;
             case (GS_TYPE_INTEGER):
                 if (!value->IsInt32()) {
@@ -547,7 +553,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
         fragment = "convertObjectToDouble", fragment = "convertObjectToGSTimestamp", 
         fragment = "SWIG_AsVal_bool", fragment = "convertObjectToBool", 
         fragment = "double_equals", fragment = "convertObjectToFloat", 
-        fragment = "convertObjectToStringArray") {
+        fragment = "convertObjectToStringArray", fragment = "cleanString") {
     static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> value, GSType type) {
         int8_t byteVal;
         int16_t shortVal;
@@ -601,15 +607,12 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 if (!value->IsString()) {
                     return false;
                 }
-                res = SWIG_AsCharPtrAndSize(value, &stringValChar, &size, &alloc);
+                res = SWIG_AsCharPtrAndSize(value, &stringVal, &size, &alloc);
                 if (!SWIG_IsOK(res)) {
                     return false;
                 }
-                stringVal = stringValChar;
                 ret = gsSetRowFieldByString(row, column, stringVal);
-                if (alloc == SWIG_NEWOBJ) {
-                    %delete_array(stringValChar);
-                }
+                cleanString(stringVal, alloc);
                 break;
             case (GS_TYPE_LONG):
                 checkConvert = SWIG_AsVal_long(value, &longVal);
@@ -692,9 +695,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 if (mydata) {
                     free((void*)mydata);
                 }
-                if (alloc == SWIG_NEWOBJ) {
-                    %delete_array(v);
-                }
+                cleanString(v, alloc);
                 break;
             case (GS_TYPE_STRING_ARRAY):
                 stringArrVal = convertObjectToStringArray(value, &length);
@@ -721,14 +722,8 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
                 if (!SWIG_IsOK(res)) {
                     return false;
                 }
-
-                if (geometryVal && size) {
-                    geometryVal = (alloc == SWIG_NEWOBJ) ? geometryVal : %new_copy_array(geometryVal, size, GSChar);
-                }
                 ret = gsSetRowFieldByGeometry(row, column, geometryVal);
-                if (geometryVal) {
-                    delete [] geometryVal;
-                }
+                cleanString(geometryVal, alloc);
                 break;
             case (GS_TYPE_INTEGER_ARRAY):
                 if (!value->IsArray()) {
@@ -985,12 +980,10 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     $1 = (!$input->IsArray()) ? 1 : 0;
 }
 
-%typemap(freearg) (const GSColumnInfo* props, int propsCount) (int i) {
+%typemap(freearg, fragment = "cleanString") (const GSColumnInfo* props, int propsCount) (int i) {
     if ($1) {
         for (i = 0; i < $2; i++) {
-            if (alloc$argnum[i] == SWIG_NEWOBJ) {
-                %delete_array($1[i].name);
-            }
+            cleanString($1[i].name, alloc$argnum[i]);
         }
         free((void *) $1);
     }
@@ -1040,15 +1033,11 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     }
 }
 
-%typemap(freearg) (const GSPropertyEntry* props, int propsCount) (int i = 0, int j = 0) {
+%typemap(freearg, fragment = "cleanString") (const GSPropertyEntry* props, int propsCount) (int i = 0, int j = 0) {
     if ($1) {
         for (i = 0; i < $2; i++) {
-            if (alloc$argnum[j] == SWIG_NEWOBJ) {
-                %delete_array($1[i].name);
-            }
-            if (alloc$argnum[j + 1] == SWIG_NEWOBJ) {
-                %delete_array($1[i].value);
-            }
+            cleanString($1[i].name, alloc$argnum[j]);
+            cleanString($1[i].value, alloc$argnum[j + 1]);
             j += 2;
         }
         free((void *) $1);
@@ -1062,9 +1051,9 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 /**
 * Typemaps for get_store() function
 */
-%typemap(in, fragment = "SWIG_AsCharPtrAndSize") (const char* host=NULL, int32_t port=NULL, const char* cluster_name=NULL,
-        const char* database=NULL, const char* username=NULL, const char* password=NULL,
-        const char* notification_member=NULL, const char* notification_provider=NULL) 
+%typemap(in, fragment = "SWIG_AsCharPtrAndSize", fragment = "cleanString") (const char* host, int32_t port, const char* cluster_name,
+        const char* database, const char* username, const char* password,
+        const char* notification_member, const char* notification_provider) 
         (v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, int i, int j, size_t size = 0, int* alloc = 0, int res, char* name = 0, char* v = 0) {
     if (!$input->IsObject()) {
         SWIG_V8_Raise("Expected object property as input");
@@ -1087,35 +1076,59 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
             if (!SWIG_IsOK(res)) {
                 %variable_fail(res, "String", "value");
             }
-            if (strcmp(name, "host") == 0) { 
-                $1 = v;
+            if (strcmp(name, "host") == 0) {
+                $1 = strdup(v);
             } else if (strcmp(name, "port") == 0) {
                 $2 = atoi(v);
             } else if (strcmp(name, "cluster_name") == 0) {
-                $3 = v;
+                $3 = strdup(v);
             } else if (strcmp(name, "database") == 0) {
-                $4 = v;
+                $4 = strdup(v);
             } else if (strcmp(name, "username") == 0) {
-                $5 = v;
+                $5 = strdup(v);
             } else if (strcmp(name, "password") == 0) {
-                $6 = v;
+                $6 = strdup(v);
             } else if (strcmp(name, "notification_member") == 0) {
-                $7 = v;
+                $7 = strdup(v);
             } else if (strcmp(name, "notification_provider") == 0) {
-                $8 = v;
+                $8 = strdup(v);
             } else {
+                cleanString(name, alloc[j]);
                 SWIG_V8_Raise("Invalid Property");
                 SWIG_fail;
             }
+            cleanString(name$argnum, alloc[j]);
+            cleanString(v, alloc[j + 1]);
 
             j += 2;
         }
     }
 }
 
-%typemap(freearg) (const char* host=NULL, int32_t port=NULL, const char* cluster_name=NULL,
-        const char* database=NULL, const char* username=NULL, const char* password=NULL,
-        const char* notification_member=NULL, const char* notification_provider=NULL) {
+%typemap(freearg) (const char* host, int32_t port, const char* cluster_name,
+        const char* database, const char* username, const char* password,
+        const char* notification_member, const char* notification_provider) {
+    if ($1) {
+        free((void*) $1);
+    }
+    if ($3) {
+        free((void*) $3);
+    }
+    if ($4) {
+        free((void*) $4);
+    }
+    if ($5) {
+        free((void*) $5);
+    }
+    if ($6) {
+        free((void*) $6);
+    }
+    if ($7) {
+        free((void*) $7);
+    }
+    if ($8) {
+        free((void*) $8);
+    }
     if (alloc$argnum) {
         free(alloc$argnum);
     }
@@ -1230,6 +1243,9 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
 
 %typemap(freearg) (const GSBlob *fieldValue) {
     if ($1) {
+        if ($1->data) {
+            free ((void*) $1->data);
+        }
         free((void *) $1);
     }
 }
@@ -1432,7 +1448,7 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
     }
 }
 
-%typemap(freearg) (GSRow*** listRow, const int *listRowContainerCount, const char ** listContainerName, size_t containerCount) {
+%typemap(freearg, fragment = "cleanString") (GSRow*** listRow, const int *listRowContainerCount, const char ** listContainerName, size_t containerCount) {
     for (int i = 0; i < $4; i++) {
         if ($1[i]) {
             for (int j = 0; j < $2[i]; j++) {
@@ -1443,7 +1459,12 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
     }
     if ($1) delete $1;
     if ($2) delete $2;
-    if ($3) delete $3;
+    if ($3) {
+        for (int i = 0; i < $4; i++) {
+            cleanString($3[i], alloc$argnum[i]);
+        }
+        free((void *) $3);
+    }
 }
 
 /**
@@ -1493,17 +1514,18 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
     }
 }
 
-%typemap(freearg) (const GSRowKeyPredicateEntry *const * predicateList, size_t predicateCount) (int i, GSRowKeyPredicateEntry* pList) {
+%typemap(freearg, fragment = "cleanString") (const GSRowKeyPredicateEntry *const * predicateList, size_t predicateCount) (int i, GSRowKeyPredicateEntry* pList) {
     if ($1 && *$1) {
         pList = *$1;
         for (i = 0; i < $2; i++) {
-            if (pList[i].containerName) {
-                if (alloc$argnum[i] == SWIG_NEWOBJ) {
-                    %delete_array(pList[i].containerName);
-                }
-            }
+            cleanString((*$1)[i].containerName, alloc$argnum[i]);
         }
-        free((void *) pList);
+        if (pList) {
+            free(pList);
+        }
+        if (alloc$argnum) {
+            free(alloc$argnum);
+        }
     }
 }
 
@@ -1840,7 +1862,7 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
 
             containerInfo[i].name = v;
             containerInfo[i].type = value->Uint32Value();
-            
+
             if (colInfo->Length() == 3) {
 %#if GS_COMPATIBILITY_SUPPORT_3_5
                 v8::Local<v8::Value> options = colInfo->Get(2);
@@ -1862,13 +1884,11 @@ v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
     }
 }
 
-%typemap(freearg) (ColumnInfoList*) {
+%typemap(freearg, fragment = "cleanString") (ColumnInfoList*) {
     size_t len = $1->size;
     if (alloc$argnum) {
         for (int i = 0; i < len; i++) {
-            if (alloc$argnum[i]) {
-                %delete_array($1->columnInfo[i].name);
-            }
+            cleanString($1->columnInfo[i].name, alloc$argnum[i]);
         }
         free(alloc$argnum);
     }
