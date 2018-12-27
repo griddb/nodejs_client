@@ -975,8 +975,8 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
 /**
 * Typemaps for get_store() function
 */
-%typemap(in, fragment = "SWIG_AsCharPtrAndSize", fragment = "cleanString") (const char* host, int32_t port, const char* cluster_name,
-        const char* database, const char* username, const char* password,
+%typemap(in, numinputs = 1, fragment = "SWIG_AsCharPtrAndSize", fragment = "cleanString", fragment = "freeargGetStore") 
+        (const char* host, int32_t port, const char* cluster_name, const char* database, const char* username, const char* password,
         const char* notification_member, const char* notification_provider) 
         (v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, int i, int j, size_t size = 0, int* alloc = 0, int res, char* v = 0) {
     if (!$input->IsObject()) {
@@ -997,30 +997,38 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
             if (!SWIG_IsOK(res)) {
                 %variable_fail(res, "String", "name");
             }
-            res = SWIG_AsCharPtrAndSize(obj->Get(keys->Get(i)), &v, &size, &alloc[j + 1]);
-            if (!SWIG_IsOK(res)) {
-                %variable_fail(res, "String", "value");
-            }
-            if (strcmp(name, "host") == 0) {
-                $1 = strdup(v);
-            } else if (strcmp(name, "port") == 0) {
-                $2 = atoi(v);
-            } else if (strcmp(name, "clusterName") == 0) {
-                $3 = strdup(v);
-            } else if (strcmp(name, "database") == 0) {
-                $4 = strdup(v);
-            } else if (strcmp(name, "username") == 0) {
-                $5 = strdup(v);
-            } else if (strcmp(name, "password") == 0) {
-                $6 = strdup(v);
-            } else if (strcmp(name, "notificationMember") == 0) {
-                $7 = strdup(v);
-            } else if (strcmp(name, "notificationProvider") == 0) {
-                $8 = strdup(v);
+
+            if (strcmp(name, "port") == 0) {
+                //Input valid is number only
+                if (obj->Get(keys->Get(i))->IsInt32()) {
+                    $2 = obj->Get(keys->Get(i))->IntegerValue();
+                } else {
+                    %variable_fail(res, "String", "value");
+                }
             } else {
-                cleanString(name, alloc[j]);
-                SWIG_V8_Raise("Invalid Property");
-                SWIG_fail;
+                res = SWIG_AsCharPtrAndSize(obj->Get(keys->Get(i)), &v, &size, &alloc[j + 1]);
+                if (!SWIG_IsOK(res)) {
+                    %variable_fail(res, "String", "value");
+                }
+                if (strcmp(name, "host") == 0 && v) {
+                    $1 = strdup(v);
+                } else if (strcmp(name, "clusterName") == 0 && v) {
+                    $3 = strdup(v);
+                } else if (strcmp(name, "database") == 0 && v) {
+                    $4 = strdup(v);
+                } else if (strcmp(name, "username") == 0 && v) {
+                    $5 = strdup(v);
+                } else if (strcmp(name, "password") == 0 && v) {
+                    $6 = strdup(v);
+                } else if (strcmp(name, "notificationMember") == 0 && v) {
+                    $7 = strdup(v);
+                } else if (strcmp(name, "notificationProvider") == 0 && v) {
+                    $8 = strdup(v);
+                } else {
+                    cleanString(name, alloc[j]);
+                    SWIG_V8_Raise("Invalid Property");
+                    SWIG_fail;
+                }
             }
             cleanString(name, alloc[j]);
             cleanString(v, alloc[j + 1]);
