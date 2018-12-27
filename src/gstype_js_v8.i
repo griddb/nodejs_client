@@ -1005,7 +1005,7 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
                 $1 = strdup(v);
             } else if (strcmp(name, "port") == 0) {
                 $2 = atoi(v);
-            } else if (strcmp(name, "cluster_name") == 0) {
+            } else if (strcmp(name, "clusterName") == 0) {
                 $3 = strdup(v);
             } else if (strcmp(name, "database") == 0) {
                 $4 = strdup(v);
@@ -1013,9 +1013,9 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
                 $5 = strdup(v);
             } else if (strcmp(name, "password") == 0) {
                 $6 = strdup(v);
-            } else if (strcmp(name, "notification_member") == 0) {
+            } else if (strcmp(name, "notificationMember") == 0) {
                 $7 = strdup(v);
-            } else if (strcmp(name, "notification_provider") == 0) {
+            } else if (strcmp(name, "notificationProvider") == 0) {
                 $8 = strdup(v);
             } else {
                 cleanString(name, alloc[j]);
