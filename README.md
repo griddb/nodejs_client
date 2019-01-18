@@ -58,6 +58,7 @@ Set LIBRARY_PATH.
 
     1. Execute the command on project directory.
 
+    $ npm install nan
     $ make
 
     2. Set the NODE_PATH variable for griddb Node.js module files.
