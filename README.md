@@ -101,6 +101,7 @@ Please refer to the following files for more detailed information.
 Note:
 1. The current API might be changed in the next version. e.g. ContainerInfo()
 2. When you use GridDB V3.0 CE, please replace gridstore.h with gridstoreForV3.0.h on include/ folder and build sources.
+3. There is [Package for 0.7.1 on npm](https://www.npmjs.com/package/griddb_node) .
 
 ## Community
 
