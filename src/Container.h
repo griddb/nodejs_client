@@ -32,7 +32,7 @@ class Container {
     friend class Store;
 
     GSRow* mRow;
-    GSType* typeList;
+    GSType* mTypeList;
 
     public:
         bool timestamp_output_with_float;
@@ -57,7 +57,6 @@ class Container {
 
     private:
         Container(GSContainer *container, GSContainerInfo* containerInfo);
-        int get_column_index(const char* columnName);
 };
 
 } /* namespace griddb */
