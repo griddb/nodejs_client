@@ -33,7 +33,11 @@ namespace griddb {
         GSColumnInfo* columnInfoList = (GSColumnInfo *) malloc(sizeof (GSColumnInfo) * containerInfo->columnCount);
         for (int i = 0; i< containerInfo->columnCount; i++) {
             columnInfoList[i].type = containerInfo->columnInfoList[i].type;
-            columnInfoList[i].name = strdup(containerInfo->columnInfoList[i].name);
+            if (containerInfo->columnInfoList[i].name) {
+                columnInfoList[i].name = strdup(containerInfo->columnInfoList[i].name);
+            } else {
+                columnInfoList[i].name = NULL;
+            }
 #if GS_COMPATIBILITY_SUPPORT_1_5
             columnInfoList[i].indexTypeFlags = containerInfo->columnInfoList[i].indexTypeFlags;
 #if GS_COMPATIBILITY_SUPPORT_3_5

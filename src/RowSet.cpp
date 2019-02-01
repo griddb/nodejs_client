@@ -162,8 +162,12 @@ namespace griddb {
             //Memory will be free from typemap
             (*listName) = (char **) malloc(mContainerInfo->columnCount * sizeof(char*));
             *num = mContainerInfo->columnCount;
-            for(int i = 0; i < mContainerInfo->columnCount; i++){
-                (*listName)[i] = (char*) mContainerInfo->columnInfoList[i].name;
+            for (int i = 0; i < mContainerInfo->columnCount; i++){
+                if (mContainerInfo->columnInfoList[i].name) {
+                    (*listName)[i] = strdup(mContainerInfo->columnInfoList[i].name);
+                } else {
+                    (*listName)[i] = NULL;
+                }
             }
         }
     }

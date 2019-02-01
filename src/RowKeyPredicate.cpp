@@ -58,7 +58,11 @@ namespace griddb {
             throw GSException(mPredicate, ret);
         }
         if (startField->type == GS_TYPE_STRING) {
-            startField->value.asString  = strdup(startKey->asString);
+            if (startKey->asString) {
+                startField->value.asString = strdup(startKey->asString);
+            } else {
+                startField->value.asString = NULL;
+            }
         } else {
             startField->value = *startKey;
         }
@@ -68,7 +72,11 @@ namespace griddb {
             throw GSException(mPredicate, ret);
         }
         if (finishField->type == GS_TYPE_STRING) {
-            finishField->value.asString = strdup(endKey->asString);
+            if (endKey->asString) {
+                finishField->value.asString = strdup(endKey->asString);
+            } else {
+                finishField->value.asString = NULL;
+            }
         } else {
             finishField->value = *endKey;
         }
@@ -82,39 +90,31 @@ namespace griddb {
 
         switch (key_type) {
         case GS_TYPE_LONG:
-            ret = gsSetPredicateStartKeyByLong(mPredicate,
-                    (int64_t *) &startKey->value.asLong);
+            ret = gsSetPredicateStartKeyByLong(mPredicate, (int64_t*)&startKey->value.asLong);
             if (ret != GS_RESULT_OK) {
                 throw GSException(mPredicate, ret);
             }
-            ret = gsSetPredicateFinishKeyByLong(mPredicate,
-                    (const int64_t *) &finishKey->value.asLong);
+            ret = gsSetPredicateFinishKeyByLong(mPredicate, (int64_t *) &finishKey->value.asLong);
             if (ret != GS_RESULT_OK) {
                 throw GSException(mPredicate, ret);
             }
             break;
         case GS_TYPE_INTEGER:
-            ret = gsSetPredicateStartKeyByInteger(mPredicate,
-                    (const int32_t *) &startKey->value.asInteger);
+            ret = gsSetPredicateStartKeyByInteger(mPredicate, (const int32_t *) &startKey->value.asInteger);
             if (ret != GS_RESULT_OK) {
                 throw GSException(mPredicate, ret);
             }
-            ret = gsSetPredicateFinishKeyByInteger(mPredicate,
-                    (const int32_t *)&finishKey->value.asInteger);
+            ret = gsSetPredicateFinishKeyByInteger(mPredicate, (const int32_t *)&finishKey->value.asInteger);
             if (ret != GS_RESULT_OK) {
                 throw GSException(mPredicate, ret);
             }
             break;
-
         case GS_TYPE_STRING:
-            ret = gsSetPredicateStartKeyByString(mPredicate,
-                    startKey->value.asString);
+            ret = gsSetPredicateStartKeyByString(mPredicate, startKey->value.asString);
             if (ret != GS_RESULT_OK) {
                 throw GSException(mPredicate, ret);
             }
-
-            ret = gsSetPredicateFinishKeyByString(mPredicate,
-                    finishKey->value.asString);
+            ret = gsSetPredicateFinishKeyByString(mPredicate, finishKey->value.asString);
             if (ret != GS_RESULT_OK) {
                 throw GSException(mPredicate, ret);
             }
@@ -188,11 +188,15 @@ namespace griddb {
         *keyCount = size;
 
         Field* keyFields = new Field[size];
-        for(int i =0;i< size; i++) {
+        for(int i = 0; i < size; i++) {
             keyFields[i].type = key_type;
             switch(key_type) {
             case GS_TYPE_STRING:
-                keyFields[i].value.asString = strdup(keyList[i].asString);
+                if (keyList[i].asString) {
+                    keyFields[i].value.asString = strdup(keyList[i].asString);
+                } else {
+                    keyFields[i].value.asString = NULL;
+                }
                 break;
             default:
                 keyFields[i].value = keyList[i];

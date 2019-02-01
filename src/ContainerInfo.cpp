@@ -38,6 +38,8 @@ namespace griddb {
 #if GS_COMPATIBILITY_SUPPORT_2_1
         if (containerInfo->dataAffinity) {
             mContainerInfo.dataAffinity = strdup(containerInfo->dataAffinity);
+        } else {
+            mContainerInfo.dataAffinity = NULL;
         }
 #endif
         mContainerInfo.columnOrderIgnorable = containerInfo->columnOrderIgnorable;
@@ -194,7 +196,11 @@ namespace griddb {
             memcpy(tmpColumnInfoList, columnInfoList.columnInfo, columnInfoList.size*sizeof(GSColumnInfo));
             //Copy memory of columns name
             for (int i = 0; i < columnInfoList.size; i++) {
-                tmpColumnInfoList[i].name = strdup(columnInfoList.columnInfo[i].name);
+                if (columnInfoList.columnInfo[i].name) {
+                    tmpColumnInfoList[i].name = strdup(columnInfoList.columnInfo[i].name);
+                } else {
+                    tmpColumnInfoList[i].name = NULL;
+                }
             }
         }
         mContainerInfo.columnInfoList = tmpColumnInfoList;

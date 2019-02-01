@@ -303,8 +303,10 @@ static GSChar** convertObjectToStringArray(v8::Local<v8::Value> value, int* size
             return NULL;
         }
 
-        arrString[i] = strdup(v);
-        cleanString(v, alloc);
+        if (v) {
+            arrString[i] = strdup(v);
+            cleanString(v, alloc);
+        }
     }
 
     return arrString;
@@ -527,10 +529,12 @@ static bool convertToRowKeyFieldWithType(griddb::Field &field, v8::Local<v8::Val
             if (!SWIG_IsOK(res)) {
                return false;
             }
-            if (v && size) {
+            if (v) {
                 field.value.asString = strdup(v);
+                cleanString(v, alloc);
+            } else {
+                field.value.asString = NULL;
             }
-            cleanString(v, alloc);
             break;
         case GS_TYPE_INTEGER:
             if (!value->IsInt32()) {
@@ -987,6 +991,14 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
     keys = obj->GetOwnPropertyNames();
     int len = (int) keys->Length();
     char* name = 0;
+    $1 = NULL;
+    $2 = 0;
+    $3 = NULL;
+    $4 = NULL;
+    $5 = NULL;
+    $6 = NULL;
+    $7 = NULL;
+    $8 = NULL;
     if (len > 0) {
         alloc = (int*) malloc(len * 2 * sizeof(int));
         memset(alloc, 0, len * 2 * sizeof(int));
@@ -1548,8 +1560,12 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
             if (!SWIG_IsOK(res)) {
                 %variable_fail(res, "String", "containerName");
             }
-            $3[i] = strdup(v);
-            cleanString(v, alloc[i]);
+            if (v) {
+                $3[i] = strdup(v);
+                cleanString(v, alloc[i]);
+            } else {
+                $3[i] = NULL;
+            }
             // Get row
             if (!(obj->Get(keys->Get(i)))->IsArray()) {
                 SWIG_V8_Raise("Expected an array as rowList");
@@ -2104,8 +2120,10 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
                 if (!SWIG_IsOK(res)) {
                     %variable_fail(res, "String", "value");
                 }
-                $1 = strdup(v);
-                cleanString(v, allocValue);
+                if (v) {
+                    $1 = strdup(v);
+                    cleanString(v, allocValue);
+                }
             } else if (strcmp(name, "indexType") == 0) {
                 if (!obj->Get(keys->Get(i))->IsInt32()) {
                     sprintf(errorMsg, "Invalid value for property %s", name);
@@ -2125,8 +2143,10 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
                 if (!SWIG_IsOK(res)) {
                     %variable_fail(res, "String", "value");
                 }
-                $3 = strdup(v);
-                cleanString(v, allocValue);
+                if (v) {
+                    $3 = strdup(v);
+                    cleanString(v, allocValue);
+                }
             } else {
                 sprintf(errorMsg, "Invalid property %s", name);
                 cleanString(name, allocKey);
@@ -2239,8 +2259,10 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
                     cleanString(name, allocKey);
                     SWIG_fail;
                 }
-                $1 = strdup(v);
-                cleanString(v, allocValue);
+                if (v) {
+                    $1 = strdup(v);
+                    cleanString(v, allocValue);
+                }
             } else if (strcmp(name, "columnInfoList") == 0) {
                 if (!obj->Get(keys->Get(i))->IsArray()) {
                     sprintf(errorMsg, "Expected array as input for property %s", name);
