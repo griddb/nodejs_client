@@ -2356,3 +2356,14 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
     }
     $1 = (boolVal == true) ? GS_TRUE : GS_FALSE;
 }
+
+//Correct check for input integer: should check range and type
+%typemap(in) (int) {
+    v8::Local<v8::Value> obj = $input;
+
+    if (!obj->IsInt32()) {
+        SWIG_V8_Raise("Type should be integer value");
+        SWIG_fail;
+    }
+    $1 = obj->IntegerValue();
+}
