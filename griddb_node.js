@@ -43,7 +43,7 @@ class Store {
     putContainer(info, modifiable = false) {
         var this_ = this;
         return new Promise(function(resolve, reject) {
-            setTimeout(function(){
+            setTimeout(function() {
                 try{
                     var container = this_.store.putContainer(info, modifiable);
                     resolve(new Container(container));
@@ -190,7 +190,7 @@ class Container {
     put(arr) {
         var this_ = this;
         return new Promise(function(resolve, reject) {
-            setTimeout(function(){
+            setTimeout(function() {
                 try {
                     resolve(this_.container.put(arr));
                 } catch(err) {
@@ -203,7 +203,7 @@ class Container {
     get(key) {
         var this_ = this;
         return new Promise(function(resolve, reject) {
-            setTimeout(function(){
+            setTimeout(function() {
                 try {
                     var row = this_.container.get(key);
                     resolve(row);
@@ -352,7 +352,7 @@ class Query {
     fetch() {
         var this_ = this;
         return new Promise(function(resolve, reject) {
-          setTimeout(function(){
+          setTimeout(function() {
               try {
                   var rowSet = this_.query.fetch(false);
                   resolve(new RowSet(rowSet));
