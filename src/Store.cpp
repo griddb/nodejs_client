@@ -152,12 +152,14 @@ namespace griddb {
         }
     }
     /**
-     * muti_get method. Using gsGetMultipleContainerRows C-API
+     * multi_get method. Using gsGetMultipleContainerRows C-API
      */
     void Store::multi_get(const GSRowKeyPredicateEntry* const * predicateList,
-            size_t predicateCount, GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList, GSType*** typeList) {
+            size_t predicateCount, GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList, GSType*** typeList, int **orderFromInput) {
+        *containerCount = 0;
         // get number of column of rows in each container.
         *colNumList = new int[predicateCount]; //will be free in argout
+        *orderFromInput = new int[predicateCount]; //will be free in argout
         *typeList = new GSType*[predicateCount]; //will be free in argout
         int length = (int)predicateCount;
         for (int i = 0; i < length; i++) {
@@ -177,6 +179,15 @@ namespace griddb {
                 predicateCount, (const GSContainerRowEntry**) entryList, containerCount);
         if (ret != GS_RESULT_OK) {
             throw GSException(mStore, ret);
+        }
+
+        // set data for orderFromInput
+        for (int i = 0; i < length; i++) {
+            for (int j = 0; j < length; j++) {
+                if (strcmp((*predicateList)[i].containerName, (*entryList)[j].containerName) == 0){
+                    (*orderFromInput)[i] = j;
+                }
+            }
         }
     }
 
