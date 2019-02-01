@@ -1622,6 +1622,9 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
         }
         free((void *) $3);
     }
+    if (alloc$argnum) {
+        free((void *) alloc$argnum);
+    }
 }
 
 /**
