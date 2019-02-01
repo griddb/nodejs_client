@@ -1707,10 +1707,10 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
                 free ((void*) (*$4)[j]);
             }
         }
-        delete (*$4);
+        delete [] (*$4);
     }
     if (*$3) {
-        delete (*$3);
+        delete [] (*$3);
     }
 }
 
@@ -1770,7 +1770,7 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
     $2 = (int)arr->Length();
     $1 = NULL;
     if ($2 > 0) {
-        $1 = (griddb::Field *) malloc($2 * sizeof(griddb::Field));
+        $1 = new griddb::Field[$2];
         if ($1 == NULL) {
             SWIG_V8_Raise("Memory allocation error");
             SWIG_fail;
@@ -1787,7 +1787,7 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
 
 %typemap(freearg) (const griddb::Field *keys, size_t keyCount) {
     if ($1) {
-        free((void*)$1);
+        delete [] $1;
     }
 }
 
@@ -2323,7 +2323,7 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
 %typemap(freearg) (const GSChar* name, const GSColumnInfo* props,
         int propsCount, GSContainerType type, bool row_key, griddb::ExpirationInfo* expiration) {
     if ($1) {
-        delete $1;
+        free((void*) $1);
     }
     if ($2) {
         for (int i = 0; i < $3; i++) {
