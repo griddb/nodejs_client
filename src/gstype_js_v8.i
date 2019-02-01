@@ -2336,3 +2336,17 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
         free(alloc$argnum);
     }
 }
+
+/**
+ * Support close method : Store.close()
+ */
+%typemap(in, fragment = "convertObjectToBool") GSBool allRelated{
+    bool boolVal;
+    v8::Local<v8::Value> obj = $input;
+    bool vbool = convertObjectToBool(obj, &boolVal);
+    if (!vbool) {
+        SWIG_V8_Raise("Type should be bool value");
+        SWIG_fail;
+    }
+    $1 = (boolVal == true) ? GS_TRUE : GS_FALSE;
+}
