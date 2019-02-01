@@ -46,7 +46,8 @@ class Store {
         void multi_put(GSRow*** listRow, const int *listRowContainerCount,
                 const char ** listContainerName, size_t containerCount);
         void multi_get(const GSRowKeyPredicateEntry* const * predicateList,
-                size_t predicateCount, GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList, GSType*** typeList, int **orderFromInput);
+                size_t predicateCount, GSContainerRowEntry **entryList, size_t* containerCount,
+                int **colNumList, GSType*** typeList, int **orderFromInput);
 
         ContainerInfo* get_container_info(const char *name);
         PartitionController* partition_info();
@@ -54,6 +55,9 @@ class Store {
 
     private:
         Store(GSGridStore* store);
+        void freeMemoryMultiGet(int** colNumList, GSType*** typeList, int length, int** orderFromInput);
+        bool setMultiContainerNumList(const GSRowKeyPredicateEntry* const * predicateList,
+                int length, int*** colNumList, GSType**** typeList);
 };
 
 }
