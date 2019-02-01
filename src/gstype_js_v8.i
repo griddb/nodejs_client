@@ -1072,28 +1072,34 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
 */
 %typemap(in) (GSQuery* const* queryList, size_t queryCount)
 (v8::Local<v8::Array> arr, v8::Local<v8::Value> query, griddb::Query *vquery, int res = 0) {
-    if (!$input->IsArray()) {
+    if ($input->IsNull()) {
+        $1 = NULL;
+        $2 = 0;
+    } else if (!$input->IsArray()) {
         SWIG_V8_Raise("Expected array as input");
         SWIG_fail;
-    }
-    arr = v8::Local<v8::Array>::Cast($input);
-    $2 = (int) arr->Length();
-    $1 = NULL;
-    if ($2 > 0) {
-        $1 = (GSQuery**) malloc($2*sizeof(GSQuery*));
-        if ($1 == NULL) {
-            SWIG_V8_Raise("Memory allocation error");
-            SWIG_fail;
-        }
-        for (int i = 0; i < $2; i++) {
-            query = arr->Get(i);
-
-            res = SWIG_ConvertPtr(query, (void**)&vquery, $descriptor(griddb::Query*), 0);
-            if (!SWIG_IsOK(res)) {
-                SWIG_V8_Raise("Convert pointer failed");
+    } else {
+        arr = v8::Local<v8::Array>::Cast($input);
+        $2 = (int) arr->Length();
+        $1 = NULL;
+        if ($2 > 0) {
+            $1 = (GSQuery**) malloc($2*sizeof(GSQuery*));
+            if ($1 == NULL) {
+                SWIG_V8_Raise("Memory allocation error");
                 SWIG_fail;
             }
-            $1[i] = vquery->gs_ptr();
+            for (int i = 0; i < $2; i++) {
+                query = arr->Get(i);
+                res = SWIG_ConvertPtr(query, (void**)&vquery, $descriptor(griddb::Query*), 0);
+                if (!SWIG_IsOK(res)) {
+                    if ($1) {
+                        free((void *) $1);
+                    }
+                    SWIG_V8_Raise("Convert pointer failed");
+                    SWIG_fail;
+                }
+                $1[i] = vquery->gs_ptr();
+            }
         }
     }
 }
