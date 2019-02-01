@@ -2196,8 +2196,8 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
     //Create $1, $2, $3, $3, $4, $5, $6 with default value
     $1 = NULL;
     $2 = NULL;
-    $3 = NULL;
-    $4 = NULL;
+    $3 = 0;
+    $4 = GS_CONTAINER_COLLECTION;
     $5 = NULL;
     $6 = NULL;
     int allocKey;
