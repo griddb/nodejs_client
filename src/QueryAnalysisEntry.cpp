@@ -20,7 +20,9 @@ namespace griddb {
 
     QueryAnalysisEntry::QueryAnalysisEntry(GSQueryAnalysisEntry* queryAnalysis) : mQueryAnalysis(NULL) {
         if (queryAnalysis) {
-            mQueryAnalysis = (GSQueryAnalysisEntry*) malloc(sizeof(GSQueryAnalysisEntry));
+            if (!mQueryAnalysis) {
+                mQueryAnalysis = (GSQueryAnalysisEntry*) malloc(sizeof(GSQueryAnalysisEntry));
+            }
             //Copy value which queryAnalysis point to
             mQueryAnalysis->id = queryAnalysis->id;
             mQueryAnalysis->depth = queryAnalysis->depth;

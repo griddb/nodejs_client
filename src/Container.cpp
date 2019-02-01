@@ -225,10 +225,6 @@ namespace griddb {
             }
             key = &keyFields->value.asString;
             break;
-        case GS_TYPE_BYTE:
-            keyFields->value.asInteger = keyFields->value.asByte;
-        case GS_TYPE_SHORT:
-            keyFields->value.asInteger = keyFields->value.asShort;
         case GS_TYPE_INTEGER:
             if (!(mContainerInfo->columnInfoList[0].type == GS_TYPE_INTEGER ||
                     mContainerInfo->columnInfoList[0].type == GS_TYPE_LONG)) {
@@ -249,7 +245,7 @@ namespace griddb {
             key = &keyFields->value.asTimestamp;
             break;
         default:
-            throw GSException("wrong type of rowKey timestamp");
+            throw GSException("wrong type of rowKey field");
         }
 
         ret = gsGetRow(mContainer, key, mRow, &exists);
@@ -278,10 +274,6 @@ namespace griddb {
                 }
                 ret = gsDeleteRow(mContainer, &keyFields->value.asString, &exists);
                 break;
-            case GS_TYPE_BYTE:
-                keyFields->value.asInteger = keyFields->value.asByte;
-            case GS_TYPE_SHORT:
-                keyFields->value.asInteger = keyFields->value.asShort;
             case GS_TYPE_INTEGER:
                 if (!(mContainerInfo->columnInfoList[0].type == GS_TYPE_INTEGER ||
                     mContainerInfo->columnInfoList[0].type == GS_TYPE_LONG)) {
@@ -302,7 +294,7 @@ namespace griddb {
                 ret = gsDeleteRow(mContainer, &keyFields->value.asTimestamp, &exists);
                 break;
             default:
-                throw GSException("wrong type of rowKey timestamp");
+                throw GSException("wrong type of rowKey field");
             }
 #if GS_COMPATIBILITY_SUPPORT_3_5
         }

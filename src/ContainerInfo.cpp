@@ -90,6 +90,8 @@ namespace griddb {
             mContainerInfo.timeSeriesProperties = timeProps;
         }
         mExpInfo = NULL;
+        mColumnInfoList.columnInfo = NULL;
+        mColumnInfoList.size = 0;
     }
 
     ContainerInfo::~ContainerInfo() {
