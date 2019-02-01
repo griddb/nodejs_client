@@ -95,20 +95,33 @@ class Store {
     }
 
     fetchAll(queryList) {
-        var queryListTmp = [];
-        for (var i = 0; i < queryList.length; i++) {
-            queryListTmp.push(queryList[i].query);
-        }
         var this_ = this;
-        return new Promise(function(resolve, reject) {
-            setTimeout(function() {
-                try {
-                    resolve(this_.store.fetchAll(queryListTmp));
-                } catch(err) {
-                    reject(convertToGSException(err));
-                }
-            }, 0);
-        });
+        if (queryList == null ||queryList.constructor !== Array || queryList.length == 0) {
+            return new Promise(function(resolve, reject) {
+                setTimeout(function() {
+                    try {
+                        resolve(this_.store.fetchAll(queryList));
+                    } catch(err) {
+                        reject(convertToGSException(err));
+                    }
+                }, 0);
+            });
+        } else {
+            return new Promise(function(resolve, reject) {
+                setTimeout(function() {
+                    var queryListRet = queryList;
+                    var queryListTmp = [];
+                    for (var i = 0; i < queryListRet.length; i++) {
+                        queryListTmp.push(queryListRet[i].query);
+                    }
+                    try {
+                        resolve(this_.store.fetchAll(queryListTmp));
+                    } catch(err) {
+                        reject(convertToGSException(err));
+                    }
+                }, 0);
+            });
+        }
     }
 
     multiPut(containerEntry) {
