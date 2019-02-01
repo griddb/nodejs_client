@@ -46,14 +46,8 @@ namespace griddb {
         case GS_TYPE_DOUBLE:
             value = &agValue->value.asDouble;
             break;
-        case GS_TYPE_FLOAT:
-            value = &agValue->value.asFloat;
-            break;
         case GS_TYPE_LONG:
             value = &agValue->value.asLong;
-            break;
-        case GS_TYPE_INTEGER:
-            value = &agValue->value.asInteger;
             break;
         case GS_TYPE_TIMESTAMP:
             value = &agValue->value.asTimestamp;
