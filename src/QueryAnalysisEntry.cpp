@@ -31,9 +31,13 @@ namespace griddb {
             mQueryAnalysis->value = strdup(queryAnalysis->value);
             mQueryAnalysis->valueType = strdup(queryAnalysis->valueType);
         }
-}
+    }
 
     QueryAnalysisEntry::~QueryAnalysisEntry() {
+        this->close();
+    }
+
+    void QueryAnalysisEntry::close() {
         if (mQueryAnalysis) {
             if (mQueryAnalysis->statement) {
                 free((void*) mQueryAnalysis->statement);
@@ -50,7 +54,7 @@ namespace griddb {
             free((void *) mQueryAnalysis);
             mQueryAnalysis = NULL;
         }
-}
+    }
 
     /**
      * get QueryAnalysisEntry data

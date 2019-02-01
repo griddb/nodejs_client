@@ -32,6 +32,7 @@ class QueryAnalysisEntry {
     public:
         QueryAnalysisEntry(GSQueryAnalysisEntry* queryAnalysis);
         ~QueryAnalysisEntry();
+        void close();
         void get(GSQueryAnalysisEntry* queryAnalysis);
     private:
 
