@@ -29,7 +29,7 @@ namespace griddb {
         //create local mContainerInfo: there is issue from C-API about using share memory that
         // make GSContainerInfo* pointer error in case : create gsRow, get GSContainerInfo from gsRow, set field of gs Row
         mContainerInfo = (GSContainerInfo*) malloc(sizeof(GSContainerInfo));
-        mContainerInfo->columnCount = containerInfo->columnCount;
+        (*mContainerInfo) = (*containerInfo); // this is for set for normal data (int, float, double..)
         GSColumnInfo* columnInfoList = (GSColumnInfo *) malloc(sizeof (GSColumnInfo) * containerInfo->columnCount);
         for (int i = 0; i< containerInfo->columnCount; i++) {
             columnInfoList[i].type = containerInfo->columnInfoList[i].type;
@@ -41,7 +41,14 @@ namespace griddb {
 #endif
 #endif
         }
+        mContainerInfo->name = NULL;
+        if (containerInfo->name) {
+            mContainerInfo->name = strdup(containerInfo->name);
+        }
         mContainerInfo->columnInfoList = columnInfoList;
+        mContainerInfo->timeSeriesProperties = NULL;
+        mContainerInfo->triggerInfoList = NULL;
+        mContainerInfo->dataAffinity = NULL;
     }
 
     Container::~Container() {
@@ -50,11 +57,15 @@ namespace griddb {
     // allRelated = FALSE, since all row object is managed by Row class
         close(GS_FALSE);
 
-        for (int i = 0; i< mContainerInfo->columnCount;i++) {
-            free((void*)mContainerInfo->columnInfoList[i].name);
+        if (mContainerInfo) {
+            for (int i = 0; i< mContainerInfo->columnCount;i++) {
+                free((void*)mContainerInfo->columnInfoList[i].name);
+            }
+            free((void*) mContainerInfo->columnInfoList);
+            free((void*) mContainerInfo->name);
+            free((void*) mContainerInfo);
         }
-        free((void*) mContainerInfo->columnInfoList);
-        free((void*) mContainerInfo);
+        free((void*) typeList);
     }
 
     /**
@@ -65,7 +76,6 @@ namespace griddb {
         if (mContainer != NULL) {
             gsCloseContainer(&mContainer, allRelated);
             mContainer = NULL;
-        	free(typeList);
         }
     }
 
@@ -141,7 +151,7 @@ namespace griddb {
     }
 
     /**
-     * Get current container ty2pe
+     * Get current container type
      */
     GSContainerType Container::get_type() {
         GSContainerType containerType;
@@ -344,7 +354,7 @@ namespace griddb {
      */
     GSType* Container::getGSTypeList(){
         if (typeList == NULL){
-             typeList = (GSType*) malloc(sizeof(GSType) * mContainerInfo->columnCount);
+            typeList = (GSType*) malloc(sizeof(GSType) * mContainerInfo->columnCount);
             for (int i = 0; i < mContainerInfo->columnCount; i++){
                 typeList[i] = mContainerInfo->columnInfoList[i].type;
             }
