@@ -1712,6 +1712,12 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
     if (*$3) {
         delete [] (*$3);
     }
+    for (int i = 0; i < *$2; i++) {
+        for (int j = 0; j < (*$1)[i].rowCount; j++) {
+            row = (GSRow*)(*$1)[i].rowList[j];
+            gsCloseRow(&row);
+        }
+    }
 }
 
 /**
