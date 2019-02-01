@@ -156,6 +156,9 @@ namespace griddb {
      */
     void Store::multi_get(const GSRowKeyPredicateEntry* const * predicateList,
             size_t predicateCount, GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList, GSType*** typeList, int **orderFromInput) {
+        *colNumList = NULL;
+        *typeList = NULL;
+        *orderFromInput = NULL;
         *containerCount = 0;
         // get number of column of rows in each container.
         *colNumList = new int[predicateCount]; //will be free in argout
@@ -163,9 +166,14 @@ namespace griddb {
         *typeList = new GSType*[predicateCount]; //will be free in argout
         int length = (int)predicateCount;
         for (int i = 0; i < length; i++) {
-            Container *tmpContainer = this->get_container((*predicateList)[i].containerName);
+            Container *tmpContainer;
+            try {
+                tmpContainer = this->get_container((*predicateList)[i].containerName);
+            } catch (GSException e) {
+                throw e;
+            }
             if (tmpContainer == NULL) {
-                throw GSException(mStore, "Not found container");
+                throw GSException(mStore, "Invalid container");
             }
             (*colNumList)[i] = tmpContainer->getColumnCount();
             (*typeList)[i] = (GSType*) malloc(sizeof(GSType) * (*colNumList)[i]);
