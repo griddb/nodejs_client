@@ -2481,6 +2481,16 @@ static void freeargContainerInfo(const GSChar* name, const GSColumnInfo* props,
     $1 = (boolVal == true) ? GS_TRUE : GS_FALSE;
 }
 
+/*
+ * Correct PartitionController.getContainerNames() function
+ */
+%extend griddb::PartitionController {
+    void get_container_names(int32_t partition_index, int64_t start, int64_t limit = -1,
+            const GSChar * const ** stringList = NULL, size_t *size = NULL){
+        return $self->get_container_names(partition_index, start, stringList, size, limit);
+    }
+}
+
 //Correct check for input integer: should check range and type
 %typemap(in) (int) {
     v8::Local<v8::Value> obj = $input;
