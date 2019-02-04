@@ -87,9 +87,9 @@ GridDB Server need to be started in advance.
 - STRING, BOOL, BYTE, SHORT, INTEGER, LONG, FLOAT, DOUBLE, TIMESTAMP, BLOB type for GridDB
 - put single row, get row with key
 - normal query, aggregation with TQL
+- Multi-Put/Get/Query (batch processing)
 
 (not available)
-- Multi-Put/Get/Query (batch processing)
 - GEOMETRY, Array type for GridDB
 - timeseries compression
 - timeseries-specific function like gsAggregateTimeSeries, gsQueryByTimeSeriesSampling in C client
