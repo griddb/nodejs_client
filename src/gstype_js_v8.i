@@ -1941,7 +1941,7 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
             int errorColumn;
             GSType errorType;
             if (hasNextRowTmp$argnum == false) {
-                SWIGV8_NULL();
+                $result = SWIGV8_NULL();
             } else {
                 row = arg1->getGSRowPtr();
                 obj = SWIGV8_ARRAY_NEW();
@@ -1962,14 +1962,18 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
         }
         case GS_ROW_SET_AGGREGATION_RESULT:
             if (hasNextRowTmp$argnum == true) {
-                value = SWIG_V8_NewPointerObj((void *)aggResultTmp$argnum, $descriptor(griddb::AggregationResult *), 0);
+                value = SWIG_V8_NewPointerObj((void *)aggResultTmp$argnum, $descriptor(griddb::AggregationResult *), SWIG_POINTER_OWN);
                 $result = value;
+            } else {
+                $result = SWIGV8_NULL();
             }
             break;
         case GS_ROW_SET_QUERY_ANALYSIS:
             if (hasNextRowTmp$argnum == true) {
-                value = SWIG_V8_NewPointerObj((void *)queryAnalysisTmp$argnum, $descriptor(griddb::QueryAnalysisEntry *), 0);
+                value = SWIG_V8_NewPointerObj((void *)queryAnalysisTmp$argnum, $descriptor(griddb::QueryAnalysisEntry *), SWIG_POINTER_OWN);
                 $result = value;
+            } else {
+                $result = SWIGV8_NULL();
             }
             break;
         default:
