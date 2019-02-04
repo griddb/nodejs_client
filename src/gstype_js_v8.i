@@ -1630,17 +1630,24 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
 /**
 * Typemaps input for Store.multi_get() function
 */
-%typemap(in) (const GSRowKeyPredicateEntry *const * predicateList, size_t predicateCount)
-(v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, GSRowKeyPredicateEntry* pList,
-griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 0, char* v = 0) {
+%typemap(in, fragment = "freeargStoreMultiGet") (const GSRowKeyPredicateEntry *const * predicateList, size_t predicateCount
+        , GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList, GSType*** typeList, int **orderFromInput)
+        (v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, GSRowKeyPredicateEntry* pList,
+        griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 0, char* v = 0, 
+        GSContainerRowEntry *tmpEntryList, size_t tmpContainerCount, int *tmpcolNumList, GSType** tmpTypeList, int *tmpOrderFromInput) {
     if (!$input->IsObject()) {
         SWIG_V8_Raise("Expected object property as input");
         SWIG_fail;
     }
     obj = $input->ToObject();
     keys = obj->GetOwnPropertyNames();
-    $2 = (int) keys->Length();
     $1 = NULL;
+    $2 = (int) keys->Length();
+    $3 = &tmpEntryList;
+    $4 = &tmpContainerCount;
+    $5 = &tmpcolNumList;
+    $6 = &tmpTypeList;
+    $7 = &tmpOrderFromInput;
     if ($2 > 0) {
         pList = (GSRowKeyPredicateEntry*) malloc($2*sizeof(GSRowKeyPredicateEntry));
         if (pList == NULL) {
@@ -1649,7 +1656,8 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
         }
         $1 = &pList;
         alloc = (int*) malloc($2 * 2 * sizeof(int));
-        if ($1 == NULL || alloc == NULL) {
+        if (alloc == NULL) {
+            freeargStoreMultiGet($1, $2, $3, $4, $5, $6, $7, alloc);
             SWIG_V8_Raise("Memory allocation error");
             SWIG_fail;
         }
@@ -1659,6 +1667,7 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
             // Get container name
             res = SWIG_AsCharPtrAndSize(keys->Get(i), &v, &size, &alloc[i]);
             if (!SWIG_IsOK(res)) {
+                freeargStoreMultiGet($1, $2, $3, $4, $5, $6, $7, alloc);
                 %variable_fail(res, "String", "containerName");
             }
             predicateEntry->containerName = v;
@@ -1666,6 +1675,7 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
             // Get predicate
             res = SWIG_ConvertPtr((obj->Get(keys->Get(i))), (void**)&vpredicate, $descriptor(griddb::RowKeyPredicate*), 0);
             if (!SWIG_IsOK(res)) {
+                freeargStoreMultiGet($1, $2, $3, $4, $5, $6, $7, alloc);
                 SWIG_V8_Raise("Convert RowKeyPredicate pointer failed");
                 SWIG_fail;
             }
@@ -1674,48 +1684,25 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
     }
 }
 
-%typemap(freearg, fragment = "cleanString") (const GSRowKeyPredicateEntry *const * predicateList, size_t predicateCount) (int i, GSRowKeyPredicateEntry* pList) {
-    if ($1 && *$1) {
-        pList = *$1;
-        for (i = 0; i < $2; i++) {
-            cleanString((*$1)[i].containerName, alloc$argnum[i]);
-        }
-        if (pList) {
-            free(pList);
-        }
-        if (alloc$argnum) {
-            free(alloc$argnum);
-        }
-    }
-}
-
-/**
- * Typemaps output for Store.multi_get() function
- */
-%typemap(in, numinputs = 0) (GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList, GSType*** typeList) 
-        (GSContainerRowEntry *tmpEntryList, size_t tmpContainerCount, int *tmpcolNumList, GSType** tmpTypeList) {
-    $1 = &tmpEntryList;
-    $2 = &tmpContainerCount;
-    $3 = &tmpcolNumList;
-    $4 = &tmpTypeList;
-}
-
-%typemap(argout, fragment = "getRowFields") (GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList, GSType*** typeList) 
-(v8::Local<v8::Object> obj, v8::Local<v8::Array> arr, v8::Local<v8::Array> rowArr, 
+%typemap(argout, fragment = "getRowFields", fragment = "freeargStoreMultiGet") 
+        (const GSRowKeyPredicateEntry *const * predicateList, size_t predicateCount, 
+        GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList, GSType*** typeList, int **orderFromInput) 
+        (v8::Local<v8::Object> obj, v8::Local<v8::Array> arr, v8::Local<v8::Array> rowArr, 
         v8::Handle<v8::String> key, v8::Handle<v8::Value> value, GSRow* row) {
     obj = SWIGV8_OBJECT_NEW();
-    int numContainer = (int) *$2;
+    int numContainer = (int) *$4;
     bool retVal;
     int errorColumn;
     GSType errorType;
     for (int i = 0; i < numContainer; i++) {
-        key = SWIGV8_STRING_NEW2((*$1)[i].containerName, strlen((char*)(*$1)[i].containerName));
+        key = SWIGV8_STRING_NEW2((*$3)[i].containerName, strlen((char*)(*$3)[i].containerName));
         arr = SWIGV8_ARRAY_NEW();
-        for (int j = 0; j < (*$1)[i].rowCount; j++) {
-            row = (GSRow*)(*$1)[i].rowList[j];
+        for (int j = 0; j < (*$3)[i].rowCount; j++) {
+            row = (GSRow*)(*$3)[i].rowList[j];
             rowArr = SWIGV8_ARRAY_NEW();
-            retVal = getRowFields(row, (*$3)[i], (*$4)[i], arg1->timestamp_output_with_float, &errorColumn, &errorType, rowArr);
+            retVal = getRowFields(row, (*$5)[i], (*$6)[i], arg1->timestamp_output_with_float, &errorColumn, &errorType, rowArr);
             if (retVal == false) {
+                freeargStoreMultiGet($1, $2, $3, $4, $5, $6, $7, alloc$argnum);
                 char errorMsg[60];
                 sprintf(errorMsg, "Can't get data for field %d with type %d", errorColumn, errorType);
                 SWIG_V8_Raise(errorMsg);
@@ -1726,23 +1713,56 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
         obj->Set(key, arr);
     }
     $result = obj;
-    if (*$4) {
-        for (int j = 0; j < *$2;j++) {
-            if ((*$4)[j]) {
-                free ((void*) (*$4)[j]);
+}
+
+%typemap(freearg, fragment = "freeargStoreMultiGet") (const GSRowKeyPredicateEntry *const * predicateList, size_t predicateCount ,
+        GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList, GSType*** typeList, int **orderFromInput) {
+    freeargStoreMultiGet($1, $2, $3, $4, $5, $6, $7, alloc$argnum);
+}
+
+%fragment("freeargStoreMultiGet", "header") {
+    //SWIG does not include freearg in fail: label (not like Python, so we need this function)
+static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicateList, size_t predicateCount, 
+        GSContainerRowEntry **entryList, size_t* containerCount, int **colNumList, GSType*** typeList, int **orderFromInput, int* alloc) {
+    int i;
+    GSRowKeyPredicateEntry* pList;
+    if (predicateList && *predicateList) {
+        pList = (GSRowKeyPredicateEntry*) *predicateList;
+        for (i = 0; i < predicateCount; i++) {
+            cleanString((*predicateList)[i].containerName, alloc[i]);
+        }
+        if (pList) {
+            free(pList);
+        }
+    }
+    if (alloc) {
+        free(alloc);
+    }
+
+    if (*colNumList) {
+        delete [] *colNumList;
+    }
+    if (*typeList) {
+        for (int j = 0; j < (int) predicateCount; j++) {
+            if ((*typeList)[j]) {
+                free ((void*) (*typeList)[j]);
             }
         }
-        delete [] (*$4);
+        delete [] (*typeList);
     }
-    if (*$3) {
-        delete [] (*$3);
-    }
-    for (int i = 0; i < *$2; i++) {
-        for (int j = 0; j < (*$1)[i].rowCount; j++) {
-            row = (GSRow*)(*$1)[i].rowList[j];
-            gsCloseRow(&row);
+    if (entryList) {
+        GSRow* row;
+        for (int i = 0; i < *containerCount; i++) {
+            for (int j = 0; j < (*entryList)[i].rowCount; j++) {
+                row = (GSRow*)(*entryList)[i].rowList[j];
+                gsCloseRow(&row);
+            }
         }
     }
+    if (*orderFromInput) {
+        delete [] *orderFromInput;
+    }
+}
 }
 
 /**
