@@ -54,7 +54,7 @@ namespace griddb {
      * Check whether in MULTICAST mode
      */
     bool StoreFactory::check_multicast(const char* address) {
-        if (address) {
+        if (address && address[0] != '\0') {
             char *tmp = strdup(address);
             char *octets = strtok((char*)tmp, ".");
             if (octets) {
@@ -86,36 +86,36 @@ namespace griddb {
             set_property_entry(&local_props[1], "notificationPort", lport.c_str());
             index = 2;
         } else {
-            if (host) {
+            if (host && host[0] != '\0') {
                 set_property_entry(&local_props[0], "host", host);
                 set_property_entry(&local_props[1], "port", lport.c_str());
                 index += 2;
             }
 
-            if (notification_member) {
+            if (notification_member && notification_member[0] != '\0') {
                 set_property_entry(&local_props[index], "notificationMember", notification_member);
                 index++;
             }
-            if (notification_provider) {
+            if (notification_provider && notification_provider[0] != '\0') {
                 set_property_entry(&local_props[index], "notificationProvider", notification_provider);
                 index++;
             }
 
         }
-        if (cluster_name) {
+        if (cluster_name && cluster_name[0] != '\0') {
             set_property_entry(&local_props[index], "clusterName", cluster_name);
             index++;
         }
-        if (database) {
+        if (database && database[0] != '\0') {
             set_property_entry(&local_props[index], "database", database);
             index++;
         }
-        if (user) {
+        if (user && user[0] != '\0') {
             set_property_entry(&local_props[index], "user", user);
             index++;
 
         }
-        if (password) {
+        if (password && password[0] != '\0') {
             set_property_entry(&local_props[index], "password", password);
             index++;
         }
