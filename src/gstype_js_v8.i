@@ -58,12 +58,12 @@
 %attribute(griddb::ContainerInfo, GSChar*, name, get_name, set_name);
 //Read only attribute ContainerInfo::type 
 %attribute(griddb::ContainerInfo, GSContainerType, type, get_type, set_type);
-//Read only attribute ContainerInfo::rowKeyAssign 
+//Read only attribute ContainerInfo::rowKey
 %attribute(griddb::ContainerInfo, bool, rowKey, get_row_key_assigned, set_row_key_assigned);
 //Read only attribute ContainerInfo::columnInfoList 
 %attributeval(griddb::ContainerInfo, ColumnInfoList, columnInfoList, get_column_info_list, set_column_info_list);
-//Read only attribute ContainerInfo::columnInfoList 
-%attributeval(griddb::ContainerInfo, griddb::ExpirationInfo, expiration, get_expiration_info, set_expiration_info);
+//Read only attribute ContainerInfo::expiration 
+%attribute(griddb::ContainerInfo, griddb::ExpirationInfo*, expiration, get_expiration_info, set_expiration_info);
 //Read only attribute ExpirationInfo::time 
 %attribute(griddb::ExpirationInfo, int, time, get_time, set_time);
 //Read only attribute ExpirationInfo::unit 

@@ -61,8 +61,8 @@ class ContainerInfo {
         GSColumnInfo get_column_info(size_t column);
         ColumnInfoList get_column_info_list();
         void set_column_info_list(ColumnInfoList columnInfoList);
-        ExpirationInfo& get_expiration_info();
-        void set_expiration_info(ExpirationInfo expirationInfo);
+        ExpirationInfo* get_expiration_info();
+        void set_expiration_info(ExpirationInfo* expirationInfo);
         bool get_row_key_assigned();
         GSContainerInfo* gs_info();
 

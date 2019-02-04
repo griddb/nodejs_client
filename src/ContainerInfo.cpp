@@ -219,23 +219,24 @@ namespace griddb {
     /*
      * Set attribute: expiration
      */
-    void ContainerInfo::set_expiration_info(ExpirationInfo expirationInfo) {
+    void ContainerInfo::set_expiration_info(ExpirationInfo* expirationInfo) {
 #if GS_COMPATIBILITY_SUPPORT_1_5
         if (mContainerInfo.timeSeriesProperties != NULL) {
             free((void*) mContainerInfo.timeSeriesProperties);
         }
-        GSTimeSeriesProperties* ts = (GSTimeSeriesProperties*) malloc(sizeof(GSTimeSeriesProperties));
+        if (expirationInfo) {
+            GSTimeSeriesProperties* ts = (GSTimeSeriesProperties*) malloc(sizeof(GSTimeSeriesProperties));
+            memcpy(ts, expirationInfo->gs_ts(), sizeof(GSTimeSeriesProperties));
 
-        memcpy(ts, expirationInfo.gs_ts(), sizeof(GSTimeSeriesProperties));
-
-        mContainerInfo.timeSeriesProperties = ts;
+            mContainerInfo.timeSeriesProperties = ts;
+        }
 #endif
     }
 
     /*
      * Get attribute: expiration
      */
-    ExpirationInfo& ContainerInfo::get_expiration_info() {
+    ExpirationInfo* ContainerInfo::get_expiration_info() {
         if (mContainerInfo.timeSeriesProperties != NULL){
             if (mExpInfo != NULL) {
                 mExpInfo->set_time(mContainerInfo.timeSeriesProperties->rowExpirationTime);
@@ -243,11 +244,13 @@ namespace griddb {
                 mExpInfo->set_division_count(mContainerInfo.timeSeriesProperties->expirationDivisionCount);
             } else {
                 mExpInfo = new ExpirationInfo(mContainerInfo.timeSeriesProperties->rowExpirationTime,
-                mContainerInfo.timeSeriesProperties->rowExpirationTimeUnit,
-                mContainerInfo.timeSeriesProperties->expirationDivisionCount);
+                    mContainerInfo.timeSeriesProperties->rowExpirationTimeUnit,
+                    mContainerInfo.timeSeriesProperties->expirationDivisionCount);
             }
+        } else {
+            mExpInfo = NULL;
         }
-        return *mExpInfo;
+        return mExpInfo;
     }
 
 } /* namespace griddb */
