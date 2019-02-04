@@ -1835,7 +1835,7 @@ griddb::RowKeyPredicate *vpredicate, int res = 0, size_t size = 0, int* alloc = 
     v8::Local<v8::Array> obj;
     obj = SWIGV8_ARRAY_NEW();
     for (int i = 0; i < keyCount1$argnum; i++) {
-        v8::Handle<v8::Value> value = convertFieldToObject(&keys1$argnum[i].value, keys1$argnum[i].type);
+        v8::Handle<v8::Value> value = convertFieldToObject(&keys1$argnum[i].value, keys1$argnum[i].type, arg1->timestamp_output_with_float);
         obj->Set(i, value);
     }
     $result = obj;
