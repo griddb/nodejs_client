@@ -926,7 +926,7 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
 /**
 * Typemaps for set_properties() function
 */
-%typemap(in, fragment = "SWIG_AsCharPtrAndSize") (const GSPropertyEntry* props, int propsCount)
+%typemap(in, fragment = "SWIG_AsCharPtrAndSize", fragment = "freeargSetProperties") (const GSPropertyEntry* props, int propsCount)
 (v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, int j, size_t size = 0, int* alloc = 0, int res, char* v = 0) {
     if (!$input->IsObject()) {
         SWIG_V8_Raise("Expected object property as input");
@@ -940,6 +940,7 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
         $1 = (GSPropertyEntry *) malloc($2*sizeof(GSPropertyEntry));
         alloc = (int*) malloc($2 * 2 * sizeof(int));
         if ($1 == NULL || alloc == NULL) {
+            freeargSetProperties($1, $2, alloc);
             SWIG_V8_Raise("Memory allocation error");
             SWIG_fail;
         }
@@ -949,12 +950,14 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
         for (int i = 0; i < $2; i++) {
             res = SWIG_AsCharPtrAndSize(keys->Get(i), &v, &size, &alloc[j]);
             if (!SWIG_IsOK(res)) {
+                freeargSetProperties($1, $2, alloc);
                 %variable_fail(res, "String", "name");
             }
 
             $1[i].name = v;
             res = SWIG_AsCharPtrAndSize(obj->Get(keys->Get(i)), &v, &size, &alloc[j + 1]);
             if (!SWIG_IsOK(res)) {
+                freeargSetProperties($1, $2, alloc);
                 %variable_fail(res, "String", "value");
             }
             $1[i].value = v;
@@ -963,19 +966,29 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
     }
 }
 
-%typemap(freearg, fragment = "cleanString") (const GSPropertyEntry* props, int propsCount) (int i = 0, int j = 0) {
-    if ($1) {
-        for (i = 0; i < $2; i++) {
-            cleanString($1[i].name, alloc$argnum[j]);
-            cleanString($1[i].value, alloc$argnum[j + 1]);
+%typemap(freearg, fragment = "freeargSetProperties") (const GSPropertyEntry* props, int propsCount){
+    freeargSetProperties($1, $2, alloc$argnum);
+}
+
+%fragment("freeargSetProperties", "header", fragment = "cleanString") {
+    //SWIG does not include freearg in fail: label (not like Python, so we need this function)
+static void freeargSetProperties(GSPropertyEntry* entry, int size, int* alloc) {
+    int j = 0;
+    if (entry) {
+        for (int i = 0; i < size; i++) {
+            cleanString(entry[i].name, alloc[j]);
+            cleanString(entry[i].value, alloc[j + 1]);
             j += 2;
         }
-        free((void *) $1);
+        free((void *) entry);
+        entry = NULL;
     }
 
-    if (alloc$argnum) {
-        free(alloc$argnum);
+    if (alloc) {
+        free(alloc);
+        alloc = NULL;
     }
+}
 }
 
 /**
@@ -1009,6 +1022,7 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
         for (int i = 0; i < len; i++) {
             res = SWIG_AsCharPtrAndSize(keys->Get(i), &name, &size, &alloc[j]);
             if (!SWIG_IsOK(res)) {
+                freeargGetStore($1, $3, $4, $5, $6, $7, $8, alloc);
                 %variable_fail(res, "String", "name");
             }
 
@@ -1017,11 +1031,13 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
                 if (obj->Get(keys->Get(i))->IsInt32()) {
                     $2 = obj->Get(keys->Get(i))->IntegerValue();
                 } else {
+                    freeargGetStore($1, $3, $4, $5, $6, $7, $8, alloc);
                     %variable_fail(res, "String", "value");
                 }
             } else {
                 res = SWIG_AsCharPtrAndSize(obj->Get(keys->Get(i)), &v, &size, &alloc[j + 1]);
                 if (!SWIG_IsOK(res)) {
+                    freeargGetStore($1, $3, $4, $5, $6, $7, $8, alloc);
                     %variable_fail(res, "String", "value");
                 }
                 if (strcmp(name, "host") == 0 && v) {
@@ -1040,6 +1056,7 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
                     $8 = strdup(v);
                 } else {
                     cleanString(name, alloc[j]);
+                    freeargGetStore($1, $3, $4, $5, $6, $7, $8, alloc);
                     SWIG_V8_Raise("Invalid Property");
                     SWIG_fail;
                 }
@@ -1052,33 +1069,42 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
     }
 }
 
-%typemap(freearg) (const char* host, int32_t port, const char* cluster_name,
+%typemap(freearg, fragment = "freeargGetStore") (const char* host, int32_t port, const char* cluster_name,
         const char* database, const char* username, const char* password,
         const char* notification_member, const char* notification_provider) {
-    if ($1) {
-        free((void*) $1);
+    freeargGetStore($1, $3, $4, $5, $6, $7, $8, alloc$argnum);
+}
+
+%fragment("freeargGetStore", "header") {
+    //SWIG does not include freearg in fail: label (not like Python, so we need this function)
+static void freeargGetStore(const char* host, const char* cluster_name,
+        const char* database, const char* username, const char* password,
+        const char* notification_member, const char* notification_provider, int* alloc) {
+    if (host) {
+        free((void*) host);
     }
-    if ($3) {
-        free((void*) $3);
+    if (cluster_name) {
+        free((void*) cluster_name);
     }
-    if ($4) {
-        free((void*) $4);
+    if (database) {
+        free((void*) database);
     }
-    if ($5) {
-        free((void*) $5);
+    if (username) {
+        free((void*) username);
     }
-    if ($6) {
-        free((void*) $6);
+    if (password) {
+        free((void*) password);
     }
-    if ($7) {
-        free((void*) $7);
+    if (notification_member) {
+        free((void*) notification_member);
     }
-    if ($8) {
-        free((void*) $8);
+    if (notification_provider) {
+        free((void*) notification_provider);
     }
-    if (alloc$argnum) {
-        free(alloc$argnum);
+    if (alloc) {
+        free(alloc);
     }
+}
 }
 
 /**
@@ -1489,7 +1515,8 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
 /**
  * Typemaps for Store.multi_put
  */
-%typemap(in, fragment = "convertToRowKeyFieldWithType", fragment = "SWIG_AsCharPtrAndSize", fragment = "cleanString") (GSRow*** listRow, const int *listRowContainerCount, const char ** listContainerName, size_t containerCount)
+%typemap(in, fragment = "convertToRowKeyFieldWithType", fragment = "SWIG_AsCharPtrAndSize", fragment = "cleanString"
+        , fragment = "freeargStoreMultiPut") (GSRow*** listRow, const int *listRowContainerCount, const char ** listContainerName, size_t containerCount)
 (v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, v8::Local<v8::Array> arr, int res = 0, v8::Local<v8::Array> rowArr,
 size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
     if (!$input->IsObject()) {
@@ -1509,11 +1536,9 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
         $1 = new GSRow**[$4];
         $2 = (int*) malloc($4 * sizeof(int));
         $3 = (char **) malloc($4 * sizeof(char*));
-        int i = 0;
-        int j = 0;
-        
         alloc = (int*) malloc($4*sizeof(int));
-        if ($1 == NULL || alloc == NULL) {
+        if ($1 == NULL || $2 == NULL || $3 == NULL || alloc == NULL) {
+            freeargStoreMultiPut($1, $2, $3, $4, alloc);
             SWIG_V8_Raise("Memory allocation error");
             SWIG_fail;
         }
@@ -1523,6 +1548,7 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
             // Get container name
             res = SWIG_AsCharPtrAndSize(keys->Get(i), &v, &sizeTmp, &alloc[i]);
             if (!SWIG_IsOK(res)) {
+                freeargStoreMultiPut($1, $2, $3, $4, alloc);
                 %variable_fail(res, "String", "containerName");
             }
             if (v) {
@@ -1533,6 +1559,7 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
             }
             // Get row
             if (!(obj->Get(keys->Get(i)))->IsArray()) {
+                freeargStoreMultiPut($1, $2, $3, $4, alloc);
                 SWIG_V8_Raise("Expected an array as rowList");
                 SWIG_fail;
             }
@@ -1561,6 +1588,7 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
                         sprintf(errorMsg, "Invalid value for column %d, type should be : %d", k, typeArr[k]);
                         delete containerInfoTmp;
                         free((void *) typeArr);
+                        freeargStoreMultiPut($1, $2, $3, $4, alloc);
                         SWIG_V8_Raise(errorMsg);
                         SWIG_fail;
                     }
@@ -1570,26 +1598,41 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
     }
 }
 
-%typemap(freearg, fragment = "cleanString") (GSRow*** listRow, const int *listRowContainerCount, const char ** listContainerName, size_t containerCount) {
-    for (int i = 0; i < $4; i++) {
-        if ($1[i]) {
-            for (int j = 0; j < $2[i]; j++) {
-                gsCloseRow(&$1[i][j]);
+%typemap(freearg, fragment = "freeargStoreMultiPut") (GSRow*** listRow, const int *listRowContainerCount, char ** listContainerName, size_t containerCount) {
+    freeargStoreMultiPut($1, $2, $3, $4, alloc$argnum);
+}
+
+%fragment("freeargStoreMultiPut", "header") {
+    //SWIG does not include freearg in fail: label (not like Python, so we need this function)
+static void freeargStoreMultiPut(GSRow*** listRow, const int *listRowContainerCount, char ** listContainerName, size_t containerCount, int* alloc) {
+    if (listRow) {
+        for (int i = 0; i < containerCount; i++) {
+            if (listRow[i]) {
+                for (int j = 0; j < listRowContainerCount[i]; j++) {
+                    gsCloseRow(&listRow[i][j]);
+                }
+                delete [] listRow[i];
+                listRow[i] = NULL;
             }
-            delete $1[i];
         }
+        delete [] listRow;
+        listRow = NULL;
     }
-    if ($1) delete $1;
-    if ($2) delete $2;
-    if ($3) {
-        for (int i = 0; i < $4; i++) {
-            free((void *) $3[i]);
+
+    if (listRowContainerCount) delete listRowContainerCount;
+    if (listContainerName) {
+        for (int i = 0; i < containerCount; i++) {
+            if (listContainerName[i]) {
+                free((void*)listContainerName[i]);
+                listContainerName[i] = NULL;
+            }
         }
-        free((void *) $3);
+        free((void *) listContainerName);
     }
-    if (alloc$argnum) {
-        free((void *) alloc$argnum);
+    if (alloc) {
+        free((void *) alloc);
     }
+}
 }
 
 /**
@@ -1751,7 +1794,6 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
         SWIG_V8_Raise("Memory allocation error");
         SWIG_fail;
     }
-
     GSType type = arg1->get_key_type();
     if (!(convertToRowKeyFieldWithType(*$1, $input, type))) {
         %variable_fail(1, "String", "Can not create row based on input");
@@ -1829,7 +1871,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
 /**
  * Typemap for Container::multi_put
  */
-%typemap(in, fragment = "convertToFieldWithType") (GSRow** listRowdata, int rowCount) {
+%typemap(in, fragment = "convertToFieldWithType", fragment = "freeargContainerMultiPut") (GSRow** listRowdata, int rowCount) {
     if (!$input->IsArray()) {
         SWIG_V8_Raise("Expected array as input");
         SWIG_fail;
@@ -1847,20 +1889,22 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
             v8::Local<v8::Array> fieldArr = v8::Local<v8::Array>::Cast(arr->Get(i));
             length = (int)fieldArr->Length();
             if (length != arg1->getColumnCount()) {
+                freeargContainerMultiPut($1, i);
                 SWIG_V8_Raise("Num row is different with container info");
                 SWIG_fail;
             }
             GSResult ret = gsCreateRowByContainer(mContainer, &$1[i]);
             if (ret != GS_RESULT_OK) {
+                freeargContainerMultiPut($1, i);
                 SWIG_V8_Raise("Can't create GSRow");
                 SWIG_fail;
             }
             for (int k = 0; k < length; k++) {
                 GSType type = typeList[k];
                 if (!(convertToFieldWithType($1[i], k, fieldArr->Get(k), type))) {
-                    $2 = i + 1;
                     char errorMsg[200];
                     sprintf(errorMsg, "Invalid value for row %d, column %d, type should be : %d", i, k, type);
+                    freeargContainerMultiPut($1, i + 1);
                     SWIG_V8_Raise(errorMsg);
                     SWIG_fail;
                 }
@@ -1869,13 +1913,20 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
     }
 }
 
-%typemap(freearg) (GSRow** listRowdata, int rowCount) {
-    if ($1) {
-        for (int rowNum = 0; rowNum < $2; rowNum++) {
-            gsCloseRow(&$1[rowNum]);
+%typemap(freearg, fragment = "freeargContainerMultiPut") (GSRow** listRowdata, int rowCount) {
+    freeargContainerMultiPut($1, $2);
+}
+
+%fragment("freeargContainerMultiPut", "header") {
+    //SWIG does not include freearg in fail: label (not like Python, so we need this function)
+static void freeargContainerMultiPut(GSRow** listRowdata, int rowCount) {
+    if (listRowdata) {
+        for (int rowNum = 0; rowNum < rowCount; rowNum++) {
+            gsCloseRow(&listRowdata[rowNum]);
         }
-        delete $1;
+        delete [] listRowdata;
     }
+}
 }
 
 /**
@@ -1970,7 +2021,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
 }
 
 //attribute ContainerInfo::columnInfoList
-%typemap(in) (ColumnInfoList*) 
+%typemap(in, fragment = "freeargColumnInfoList") (ColumnInfoList*) 
         (v8::Local<v8::Array> arr, v8::Local<v8::Array> colInfo, v8::Local<v8::Array> keys, size_t sizeTmp = 0, int* alloc = 0, int res, char* v = 0, ColumnInfoList infolist) {
 
     if (!$input->IsArray()) {
@@ -1983,22 +2034,31 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
     $1 = &infolist;
     if (len) {
         containerInfo = (GSColumnInfo*) malloc(len * sizeof(GSColumnInfo));
-        alloc = (int*) malloc(len*sizeof(int));
-        if (containerInfo == NULL || alloc == NULL) {
+        if (containerInfo == NULL ) {
             SWIG_V8_Raise("Memory allocation error");
             SWIG_fail;
         }
+        alloc = (int*) malloc(len*sizeof(int));
+        if (alloc == NULL) {
+            free((void*) containerInfo);
+            SWIG_V8_Raise("Memory allocation error");
+            SWIG_fail;
+        }
+        $1->columnInfo = containerInfo;
+        $1->size = len;
         memset(containerInfo, 0x0, len*sizeof(GSColumnInfo));
         memset(alloc, 0x0, len*sizeof(int));
 
         for (int i = 0; i < len; i++) {
             if (!(arr->Get(i))->IsArray()) {
+                freeargColumnInfoList($1, alloc);
                 SWIG_V8_Raise("Expected array property as ColumnInfo element");
                 SWIG_fail;
             }
 
             colInfo = v8::Local<v8::Array>::Cast(arr->Get(i));
             if (colInfo->Length() < 2) {
+                freeargColumnInfoList($1, alloc);
                 SWIG_V8_Raise("Expected at least two elements for ColumnInfo property");
                 SWIG_fail;
             }
@@ -2007,10 +2067,12 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
 
             res = SWIG_AsCharPtrAndSize(key, &v, &sizeTmp, &alloc[i]);
             if (!SWIG_IsOK(res)) {
+                freeargColumnInfoList($1, alloc);
                 %variable_fail(res, "String", "Column name");
             }
 
             if (!value->IsNumber()) {
+                freeargColumnInfoList($1, alloc);
                 SWIG_V8_Raise("Expected Integer as type of Column type");
                 SWIG_fail;
             }
@@ -2023,33 +2085,40 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
                 v8::Local<v8::Value> options = colInfo->Get(2);
 
                 if (!options->IsNumber()) {
+                    freeargColumnInfoList($1, alloc);
                     SWIG_V8_Raise("Expected Integer as type of Column options");
                     SWIG_fail;
                 }
 
                 containerInfo[i].options = options->Uint32Value();
 %#else
+                freeargColumnInfoList($1, alloc);
                 SWIG_V8_Raise("Expected two elements for ColumnInfo property");
                 SWIG_fail;
 %#endif
             }
         }
-        $1->columnInfo = containerInfo;
-        $1->size = len;
     }
 }
 
-%typemap(freearg, fragment = "cleanString") (ColumnInfoList*) {
-    size_t len = $1->size;
-    if (alloc$argnum) {
-        for (int i = 0; i < len; i++) {
-            cleanString($1->columnInfo[i].name, alloc$argnum[i]);
+%typemap(freearg, fragment = "cleanString", fragment = "freeargColumnInfoList") (ColumnInfoList*) {
+    freeargColumnInfoList($1, alloc$argnum);
+}
+
+%fragment("freeargColumnInfoList", "header", fragment = "cleanString") {
+    //SWIG does not include freearg in fail: label (not like Python, so we need this function)
+static void freeargColumnInfoList(ColumnInfoList* infoList, int* alloc) {
+    size_t len = infoList->size;
+    if (infoList->columnInfo) {
+        if (alloc) {
+            for (int i = 0; i < len; i++) {
+                cleanString(infoList->columnInfo[i].name, alloc[i]);
+            }
+            free(alloc);
         }
-        free(alloc$argnum);
+        free ((void *)infoList->columnInfo);
     }
-    if ($1->columnInfo) {
-        free ((void *)$1->columnInfo);
-    }
+}
 }
 
 %typemap(out) (ColumnInfoList*) {
@@ -2079,7 +2148,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
 /**
 * Typemaps for create_index()/ drop_index function : support keyword parameter ({"columnName" : str, "indexType" : int, "name" : str})
 */
-%typemap(in, fragment = "SWIG_AsCharPtrAndSize", fragment = "cleanString") (const char* column_name, GSIndexTypeFlags index_type, const char* name) 
+%typemap(in, fragment = "SWIG_AsCharPtrAndSize", fragment = "cleanString" , fragment = "freeargContainerIndex") (const char* column_name, GSIndexTypeFlags index_type, const char* name)
         (v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, int i, int j, size_t size = 0,size_t size1 = 0, int* alloc = 0, int res,  char* v = 0) {
     char* name;
     if (!$input->IsObject()) {
@@ -2100,17 +2169,20 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
         for (int i = 0; i < len; i++) {
             res = SWIG_AsCharPtrAndSize(keys->Get(i), &name, &size, &allocKey);
             if (!SWIG_IsOK(res)) {
+                freeargContainerIndex($1, $3);
                 %variable_fail(res, "String", "name");
             }
             if (strcmp(name, "columnName") == 0) {
                 if (!obj->Get(keys->Get(i))->IsString()) {
                     sprintf(errorMsg, "Invalid value for property %s", name);
-                    SWIG_V8_Raise(errorMsg);
                     cleanString(name, allocKey);
+                    freeargContainerIndex($1, $3);
+                    SWIG_V8_Raise(errorMsg);
                     SWIG_fail;
                 }
                 res = SWIG_AsCharPtrAndSize(obj->Get(keys->Get(i)), &v, &size1, &allocValue);
                 if (!SWIG_IsOK(res)) {
+                    freeargContainerIndex($1, $3);
                     %variable_fail(res, "String", "value");
                 }
                 if (v) {
@@ -2120,20 +2192,23 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
             } else if (strcmp(name, "indexType") == 0) {
                 if (!obj->Get(keys->Get(i))->IsInt32()) {
                     sprintf(errorMsg, "Invalid value for property %s", name);
-                    SWIG_V8_Raise(errorMsg);
                     cleanString(name, allocKey);
+                    freeargContainerIndex($1, $3);
+                    SWIG_V8_Raise(errorMsg);
                     SWIG_fail;
                 }
                 $2 = obj->Get(keys->Get(i))->IntegerValue();
             } else if (strcmp(name, "name") == 0) {
                 if (!obj->Get(keys->Get(i))->IsString()) {
                     sprintf(errorMsg, "Invalid value for property %s", name);
-                    SWIG_V8_Raise(errorMsg);
                     cleanString(name, allocKey);
+                    freeargContainerIndex($1, $3);
+                    SWIG_V8_Raise(errorMsg);
                     SWIG_fail;
                 }
                 res = SWIG_AsCharPtrAndSize(obj->Get(keys->Get(i)), &v, &size1, &allocValue);
                 if (!SWIG_IsOK(res)) {
+                    freeargContainerIndex($1, $3);
                     %variable_fail(res, "String", "value");
                 }
                 if (v) {
@@ -2143,6 +2218,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
             } else {
                 sprintf(errorMsg, "Invalid property %s", name);
                 cleanString(name, allocKey);
+                freeargContainerIndex($1, $3);
                 SWIG_V8_Raise(errorMsg);
                 SWIG_fail;
             }
@@ -2151,14 +2227,20 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
     }
 }
 
-%typemap(freearg) (const char* column_name, GSIndexTypeFlags index_type, const char* name) {
-    if ($1) {
-        free((void*) $1);
-    }
+%typemap(freearg, fragment = "freeargContainerIndex") (const char* column_name, GSIndexTypeFlags index_type, const char* name) {
+    freeargContainerIndex($1, $3);
+}
 
-    if ($3) {
-        free((void*) $3);
+%fragment("freeargContainerIndex", "header", fragment = "cleanString") {
+    //SWIG does not include freearg in fail: label (not like Python, so we need this function)
+static void freeargContainerIndex(const char* column_name, const char* name) {
+    if (column_name) {
+        free((void*) column_name);
     }
+    if (name) {
+        free((void*) name);
+    }
+}
 }
 
 /**
@@ -2207,7 +2289,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
 /**
 * Typemaps for ContainerInfo : support keyword parameter ({"name" : str, "columnInfoList" : array, "type" : str, 'rowKey':boolean})
 */
-%typemap(in, fragment = "SWIG_AsCharPtrAndSize", fragment = "cleanString") (const GSChar* name, const GSColumnInfo* props, 
+%typemap(in, fragment = "SWIG_AsCharPtrAndSize", fragment = "cleanString", fragment = "freeargContainerInfo") (const GSChar* name, const GSColumnInfo* props, 
         int propsCount, GSContainerType type, bool row_key, griddb::ExpirationInfo* expiration)
         (v8::Local<v8::Object> obj, v8::Local<v8::Array> keys, int i, int j, size_t size = 0,size_t size1 = 0, int* alloc = 0, int res,  char* v = 0) {
     char* name;
@@ -2236,10 +2318,12 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
         for (int i = 0; i < len; i++) {
             res = SWIG_AsCharPtrAndSize(keys->Get(i), &name, &size, &allocKey);
             if (!SWIG_IsOK(res)) {
+                freeargContainerInfo($1, $2, $3, alloc);
                 %variable_fail(res, "String", "name");
             }
             if (strcmp(name, "name") == 0) {
                 if (!obj->Get(keys->Get(i))->IsString()) {
+                    freeargContainerInfo($1, $2, $3, alloc);
                     sprintf(errorMsg, "Invalid value for property %s", name);
                     SWIG_V8_Raise(errorMsg);
                     cleanString(name, allocKey);
@@ -2247,6 +2331,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
                 }
                 res = SWIG_AsCharPtrAndSize(obj->Get(keys->Get(i)), &v, &size1, &allocValue);
                 if (!SWIG_IsOK(res)) {
+                    freeargContainerInfo($1, $2, $3, alloc);
                     sprintf(errorMsg, "Memory allocation error for property %s", name);
                     SWIG_V8_Raise(errorMsg);
                     cleanString(name, allocKey);
@@ -2258,6 +2343,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
                 }
             } else if (strcmp(name, "columnInfoList") == 0) {
                 if (!obj->Get(keys->Get(i))->IsArray()) {
+                    freeargContainerInfo($1, $2, $3, alloc);
                     sprintf(errorMsg, "Expected array as input for property %s", name);
                     SWIG_V8_Raise(errorMsg);
                     cleanString(name, allocKey);
@@ -2269,6 +2355,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
                         $2 = (GSColumnInfo *) malloc($3*sizeof(GSColumnInfo));
                         alloc = (int*) malloc($3*sizeof(int));
                         if ($2 == NULL || alloc == NULL) {
+                            freeargContainerInfo($1, $2, $3, alloc);
                             SWIG_V8_Raise("Memory allocation error");
                             SWIG_fail;
                         }
@@ -2277,21 +2364,25 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
 
                         for (int j = 0; j < $3; j++) {
                             if (!(arr->Get(j))->IsArray()) {
+                                freeargContainerInfo($1, $2, $3, alloc);
                                 SWIG_V8_Raise("Expected array property as ColumnInfo element");
                                 SWIG_fail;
                             }
                             colInfo = v8::Local<v8::Array>::Cast(arr->Get(j));
                             if ((int)colInfo->Length() < 2 || (int)colInfo->Length() > 3) {
+                                freeargContainerInfo($1, $2, $3, alloc);
                                 SWIG_V8_Raise("Expected 2 or 3 elements for ColumnInfo property");
                                 SWIG_fail;
                             }
 
                             res = SWIG_AsCharPtrAndSize(colInfo->Get(0), &v, &size, &alloc[j]);
                             if (!SWIG_IsOK(res)) {
+                                freeargContainerInfo($1, $2, $3, alloc);
                                 %variable_fail(res, "String", "Column name");
                             }
 
                             if (!colInfo->Get(1)->IsInt32()) {
+                                freeargContainerInfo($1, $2, $3, alloc);
                                 SWIG_V8_Raise("Expected Integer as type of Column type");
                                 SWIG_fail;
                             }
@@ -2302,6 +2393,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
                             if ((int)colInfo->Length() == 3) {
                                 v8::Local<v8::Value> options = colInfo->Get(2);
                                 if (!options->IsInt32()) {
+                                    freeargContainerInfo($1, $2, $3, alloc);
                                     SWIG_V8_Raise("Expected Integer as type of Column options");
                                     SWIG_fail;
                                 }
@@ -2312,6 +2404,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
                     }
             } else if (strcmp(name, "type") == 0) {
                 if (!obj->Get(keys->Get(i))->IsInt32()) {
+                    freeargContainerInfo($1, $2, $3, alloc);
                     sprintf(errorMsg, "Invalid value for property %s", name);
                     SWIG_V8_Raise(errorMsg);
                     cleanString(name, allocKey);
@@ -2321,6 +2414,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
             } else if (strcmp(name, "rowKey") == 0) {
                 vbool = convertObjectToBool(obj->Get(keys->Get(i)), &boolVal);
                 if (!vbool) {
+                    freeargContainerInfo($1, $2, $3, alloc);
                     sprintf(errorMsg, "Invalid value for property %s", name);
                     SWIG_V8_Raise(errorMsg);
                     cleanString(name, allocKey);
@@ -2330,6 +2424,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
             } else if (strcmp(name, "expiration") == 0) {
                  res = SWIG_ConvertPtr(obj->Get(keys->Get(i)), (void**)&expiration, $descriptor(griddb::ExpirationInfo*), 0 | 0 );
                  if (!SWIG_IsOK(res)) {
+                     freeargContainerInfo($1, $2, $3, alloc);
                      sprintf(errorMsg, "Invalid value for property %s", name);
                      SWIG_V8_Raise(errorMsg);
                      cleanString(name, allocKey);
@@ -2337,6 +2432,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
                  }
                  $6 = (griddb::ExpirationInfo *) expiration;
             } else {
+                freeargContainerInfo($1, $2, $3, alloc);
                 cleanString(name, allocKey);
                 SWIG_V8_Raise(errorMsg);
                 SWIG_fail;
@@ -2346,21 +2442,29 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
     }
 }
 
-%typemap(freearg) (const GSChar* name, const GSColumnInfo* props,
+%typemap(freearg, fragment = "freeargContainerInfo") (const GSChar* name, const GSColumnInfo* props,
         int propsCount, GSContainerType type, bool row_key, griddb::ExpirationInfo* expiration) {
-    if ($1) {
-        free((void*) $1);
+    freeargContainerInfo($1, $2, $3, alloc$argnum);
+}
+
+%fragment("freeargContainerInfo", "header", fragment = "cleanString") {
+    //SWIG does not include freearg in fail: label (not like Python, so we need this function)
+static void freeargContainerInfo(const GSChar* name, const GSColumnInfo* props,
+        int propsCount, int* alloc) {
+    if (name) {
+        free((void*) name);
     }
-    if ($2) {
-        for (int i = 0; i < $3; i++) {
-            cleanString($2[i].name, alloc$argnum[i]);
+    if (props) {
+        for (int i = 0; i < propsCount; i++) {
+            cleanString(props[i].name, alloc[i]);
         }
-        free((void *) $2);
+        free((void *) props);
     }
 
-    if (alloc$argnum) {
-        free(alloc$argnum);
+    if (alloc) {
+        free(alloc);
     }
+}
 }
 
 /**
