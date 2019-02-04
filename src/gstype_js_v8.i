@@ -285,7 +285,7 @@ static GSChar** convertObjectToStringArray(v8::Local<v8::Value> value, int* size
     arraySize = (int) arr->Length();
 
     *size = (int)arraySize;
-    arrString = (GSChar**)malloc(arraySize * sizeof(GSChar*));
+    arrString = (GSChar**) malloc(arraySize * sizeof(GSChar*));
     if (arrString == NULL) {
         return NULL;
     }
@@ -559,8 +559,7 @@ static bool convertToRowKeyFieldWithType(griddb::Field &field, v8::Local<v8::Val
 
 %fragment("convertToFieldWithType", "header", fragment = "SWIG_AsCharPtrAndSize",
         fragment = "convertObjectToDouble", fragment = "convertObjectToGSTimestamp", 
-        fragment = "convertObjectToBool", 
-        fragment = "convertObjectToFloat", 
+        fragment = "convertObjectToBool", fragment = "convertObjectToFloat", 
         fragment = "convertObjectToStringArray", fragment = "cleanString",
         fragment = "convertObjectToLong") {
 static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> value, GSType type) {
@@ -804,7 +803,7 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
             for (i = 0; i < size; i++) {
                 checkConvert = SWIG_AsVal_int(arr->Get(i), &tmpInt);
                 shortArrVal[i] = (int16_t)tmpInt;
-                if (vbool || !SWIG_IsOK(checkConvert) ||
+                if (!SWIG_IsOK(checkConvert) ||
                     tmpInt < std::numeric_limits<int16_t>::min() ||
                     tmpInt > std::numeric_limits<int16_t>::max() ||
                     (!arr->Get(i)->IsInt32())) {
@@ -1173,43 +1172,6 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
     $result = arr;
 }
 
-// set_field_as_blob
-%typemap(in) (const GSBlob *fieldValue) (size_t size1 = 0, int* alloc = 0, int res, char* v = 0) {
-    if (!$input->IsString()) {
-        SWIG_V8_Raise("Expected string as input");
-        SWIG_fail;
-    }
-    $1 = (GSBlob*) malloc(sizeof(GSBlob));
-
-    alloc = (int*) malloc(sizeof(int));
-    memset(alloc, 0x0, sizeof(int));
-    res = SWIG_AsCharPtrAndSize($input, &v, &size1, alloc);
-    if (!SWIG_IsOK(res)) {
-        %variable_fail(res, "String", "GSBlob");
-    }
-
-    $1->size = ($input->ToString())->Length();
-    $1->data = v;
-}
-
-%typemap(freearg) (const GSBlob *fieldValue) {
-    if ($1) {
-        if ($1->data) {
-            free ((void*) $1->data);
-        }
-        free((void *) $1);
-    }
-}
-
-%typemap(in, numinputs = 0) (GSBlob *value) (GSBlob pValue) {
-    $1 = &pValue;
-}
-
-// Get_field_as_blob
-%typemap(argout) (GSBlob *value) {
-    $result = SWIGV8_STRING_NEW2((const char*)pValue$argnum.data, pValue$argnum.size);
-}
-
 /*
 * typemap for get function in AggregationResult class
 */
@@ -1217,13 +1179,13 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
     $1 = &tmpAgValue;
 }
 %typemap(argout, fragment = "convertFieldToObject") (griddb::Field *agValue) {
-    $result = convertFieldToObject(&$1->value, $1->type, arg1->timestamp_output_with_float);
+    $result = convertFieldToObject(&($1->value), $1->type, arg1->timestamp_output_with_float);
 }
 
 /**
 * Typemaps for put_row() function
 */
-%typemap(in, fragment= "convertToFieldWithType") (GSRow* row) {
+%typemap(in, fragment = "convertToFieldWithType") (GSRow* row) {
     if (!$input->IsArray()) {
         SWIG_V8_Raise("Expected array as input");
         SWIG_fail;
@@ -1236,13 +1198,13 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
     for (int i = 0; i < leng; i++) {
         GSType type = typeList[i];
         if (!(convertToFieldWithType(tmpRow, i, arr->Get(i), type))) {
-            %variable_fail(1, "String", "can not create row based on input");
+            %variable_fail(1, "String", "Can not create row based on input");
         }
     }
 }
 
 /**
-* Typemaps for put_row() function
+* Typemaps for Container::put() function
 */
 %typemap(in, fragment = "convertToFieldWithType") (GSRow *rowContainer) {
     if (!$input->IsArray()) {
@@ -1272,7 +1234,7 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
 }
 
 /*
-* typemap for get_row
+* typemap for Container::get()
 */
 %typemap(in, fragment = "convertToRowKeyFieldWithType") (griddb::Field* keyFields)(griddb::Field field) {
     $1 = &field;
@@ -1287,7 +1249,7 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
         GSType* typeList = arg1->getGSTypeList();
         GSType type = typeList[0];
         if (!convertToRowKeyFieldWithType(*$1, $input, type)) {
-            SWIG_V8_Raise("can not convert to row filed");
+            SWIG_V8_Raise("Can not convert to row field");
             SWIG_fail;
         }
     }
@@ -1298,7 +1260,7 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
 }
 
 /**
- * Support convert data from GSRow* row to Python list 
+ * Support convert data from GSRow* row to javascript data
  */
 %fragment("getRowFields", "header", fragment = "convertTimestampToObject") {
 static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool timestampOutput, int* columnError, 
@@ -1542,8 +1504,8 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
 
     if ($4 > 0) {
         $1 = new GSRow**[$4];
-        $2 = (int*)malloc($4 * sizeof(int));
-        $3 = (char **)malloc($4 * sizeof(char*));
+        $2 = (int*) malloc($4 * sizeof(int));
+        $3 = (char **) malloc($4 * sizeof(char*));
         int i = 0;
         int j = 0;
         
@@ -1768,7 +1730,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
 /**
  * Create typemap for RowKeyPredicate.set_range
  */
-%typemap(in, fragment= "convertToRowKeyFieldWithType") (griddb::Field* startKey)(griddb::Field field) {
+%typemap(in, fragment = "convertToRowKeyFieldWithType") (griddb::Field* startKey)(griddb::Field field) {
     $1 = &field;
     if ($1 == NULL) {
         SWIG_V8_Raise("Memory allocation error");
@@ -1776,11 +1738,11 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
     }
     GSType type = arg1->get_key_type();
     if (!(convertToRowKeyFieldWithType(*$1, $input, type))) {
-        %variable_fail(1, "String", "can not create row based on input");
+        %variable_fail(1, "String", "Can not create row based on input");
     }
 }
 
-%typemap(in, fragment= "convertToRowKeyFieldWithType") (griddb::Field* finishKey)(griddb::Field field) {
+%typemap(in, fragment = "convertToRowKeyFieldWithType") (griddb::Field* finishKey)(griddb::Field field) {
     $1 = &field;
     if ($1 == NULL) {
         SWIG_V8_Raise("Memory allocation error");
@@ -1789,7 +1751,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
 
     GSType type = arg1->get_key_type();
     if (!(convertToRowKeyFieldWithType(*$1, $input, type))) {
-        %variable_fail(1, "String", "can not create row based on input");
+        %variable_fail(1, "String", "Can not create row based on input");
     }
 }
 
@@ -1804,8 +1766,8 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
 %typemap(argout, fragment = "convertFieldToObject") (griddb::Field* startField, griddb::Field* finishField) {
     v8::Local<v8::Array> arr;
     arr = SWIGV8_ARRAY_NEW();
-    arr->Set(0,convertFieldToObject(&$1->value, $1->type, arg1->timestamp_output_with_float));
-    arr->Set(1,convertFieldToObject(&$2->value, $2->type, arg1->timestamp_output_with_float));
+    arr->Set(0, convertFieldToObject(&$1->value, $1->type, arg1->timestamp_output_with_float));
+    arr->Set(1, convertFieldToObject(&$2->value, $2->type, arg1->timestamp_output_with_float));
     $result = arr;
 }
 
@@ -1917,6 +1879,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
  * Typemap for QueryAnalysisEntry.get()
  */
 %typemap(in, numinputs = 0) (GSQueryAnalysisEntry* queryAnalysis) (GSQueryAnalysisEntry queryAnalysis1) {
+    queryAnalysis1 = GS_QUERY_ANALYSIS_ENTRY_INITIALIZER;
     $1 = &queryAnalysis1;
 }
 
@@ -1951,7 +1914,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
     $3 = &queryAnalysisTmp;
     $4 = &aggResultTmp;
 }
-%typemap(argout, fragment = "convertFieldToObject") (GSRowSetType* type, bool* hasNextRow,
+%typemap(argout) (GSRowSetType* type, bool* hasNextRow,
         griddb::QueryAnalysisEntry** queryAnalysis, griddb::AggregationResult** aggResult) 
     (v8::Local<v8::Array> obj, v8::Handle<v8::Value> value) {
     GSRow* row;
@@ -2003,7 +1966,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
     }
 }
 
-//attribute ContainerInfo::column_info_list
+//attribute ContainerInfo::columnInfoList
 %typemap(in) (ColumnInfoList*) 
         (v8::Local<v8::Array> arr, v8::Local<v8::Array> colInfo, v8::Local<v8::Array> keys, size_t sizeTmp = 0, int* alloc = 0, int res, char* v = 0, ColumnInfoList infolist) {
 
@@ -2349,7 +2312,6 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
                     sprintf(errorMsg, "Invalid value for property %s", name);
                     SWIG_V8_Raise(errorMsg);
                     cleanString(name, allocKey);
-                    cleanString(v, allocValue);
                     SWIG_fail;
                 }
                 $4 = obj->Get(keys->Get(i))->IntegerValue();
