@@ -452,10 +452,31 @@ class RowSet {
 
     // Sync functions
     next() {
-        try {
-            return this.rowSet.next();
-        } catch(err) {
-            throw(convertToGSException(err));
+        switch(this.type) {
+        case griddb.GS_ROW_SET_CONTAINER_ROWS:
+            try {
+                return this.rowSet.next();
+            } catch(err) {
+                throw(convertToGSException(err));
+            }
+            break;
+        case griddb.GS_ROW_SET_AGGREGATION_RESULT:
+            try {
+                return new AggregationResult(this.rowSet.next());
+            } catch(err) {
+                throw(convertToGSException(err));
+            }
+            break;
+        case griddb.GS_ROW_SET_QUERY_ANALYSIS:
+            try {
+                return new QueryAnalysisEntry(this.rowSet.next());
+            } catch(err) {
+                throw(convertToGSException(err));
+            }
+            break;
+        default:
+            throw "Invalid Rowset type";
+            break;
         }
     }
 
