@@ -36,7 +36,7 @@ class Store {
     public:
         bool timestamp_output_with_float;
         ~Store();
-        void close(GSBool allRelated);
+        void close(GSBool allRelated = GS_FALSE);
 
         Container* put_container(ContainerInfo* info, bool modifiable = false);
         Container* get_container(const char* name);

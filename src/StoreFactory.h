@@ -38,7 +38,7 @@ class StoreFactory {
 
     public:
         ~StoreFactory();
-        void close(GSBool allRelated);
+        void close(GSBool allRelated = GS_FALSE);
         static StoreFactory* get_instance();
         Store* get_store(const char* host=NULL, int32_t port=0, const char* cluster_name=NULL,
                 const char* database=NULL, const char* username=NULL, const char* password=NULL,

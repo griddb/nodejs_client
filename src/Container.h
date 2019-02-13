@@ -37,7 +37,7 @@ class Container {
     public:
         bool timestamp_output_with_float;
         ~Container();
-        void close(GSBool allRelated);
+        void close(GSBool allRelated = GS_FALSE);
         GSContainerType get_type();
         void create_index(const char* column_name, GSIndexTypeFlags index_type = GS_INDEX_FLAG_DEFAULT, const char* name=NULL);
         void drop_index(const char* column_name, GSIndexTypeFlags index_type = GS_INDEX_FLAG_DEFAULT, const char* name=NULL);
