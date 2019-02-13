@@ -523,12 +523,8 @@ static bool convertToRowKeyFieldWithType(griddb::Field &field, v8::Local<v8::Val
     field.type = type;
 
     if (value->IsNull() || value->IsUndefined()) {
-%#if GS_COMPATIBILITY_SUPPORT_3_5
-        field.type = GS_TYPE_NULL;
-        return true;
-%#else
+        // Not support null
         return false;
-%#endif
     }
 
     switch (type) {
