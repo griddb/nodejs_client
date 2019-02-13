@@ -21,8 +21,8 @@ namespace griddb {
 
     Container::Container(GSContainer *container, GSContainerInfo* containerInfo) : mContainer(container),
             mContainerInfo(NULL), mRow(NULL), mTypeList(NULL), timestamp_output_with_float(false) {
-        GSResult ret;
-        if ((ret = gsCreateRowByContainer(mContainer, &mRow)) != GS_RESULT_OK) {
+        GSResult ret = gsCreateRowByContainer(mContainer, &mRow);
+        if (ret != GS_RESULT_OK) {
             throw GSException(ret, "can not create row from Container");
         }
 
@@ -234,8 +234,7 @@ namespace griddb {
             key = &keyFields->value.asString;
             break;
         case GS_TYPE_INTEGER:
-            if (!(mContainerInfo->columnInfoList[0].type == GS_TYPE_INTEGER ||
-                    mContainerInfo->columnInfoList[0].type == GS_TYPE_LONG)) {
+            if (mContainerInfo->columnInfoList[0].type != GS_TYPE_INTEGER) {
                 throw GSException("wrong type of rowKey");
             }
             key = &keyFields->value.asInteger;
@@ -283,8 +282,7 @@ namespace griddb {
                 ret = gsDeleteRow(mContainer, &keyFields->value.asString, &exists);
                 break;
             case GS_TYPE_INTEGER:
-                if (!(mContainerInfo->columnInfoList[0].type == GS_TYPE_INTEGER ||
-                    mContainerInfo->columnInfoList[0].type == GS_TYPE_LONG)) {
+                if (mContainerInfo->columnInfoList[0].type != GS_TYPE_INTEGER) {
                     throw GSException("wrong type of rowKey");
                 }
                 ret = gsDeleteRow(mContainer, &keyFields->value.asInteger, &exists);
