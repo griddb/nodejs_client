@@ -81,8 +81,17 @@
 #include "RowKeyPredicate.h"
 #include "Store.h"
 #include "StoreFactory.h"
+%}
+#if !defined(SWIGJAVASCRIPT)
+%{
+#include "TimestampUtils.h"
+%}
+#endif
+#if defined(SWIGJAVASCRIPT) || defined(SWIGPHP)
+%{
 #include "EnumValue.h"
 %}
+#endif
 
 #if defined(SWIGPYTHON)
 %shared_ptr(griddb::Resource)
@@ -114,4 +123,9 @@
 %include "RowKeyPredicate.h"
 %include "Store.h"
 %include "StoreFactory.h"
+#if !defined(SWIGJAVASCRIPT)
+%include "TimestampUtils.h"
+#endif
+#if defined(SWIGJAVASCRIPT) || defined(SWIGPHP)
 %include "EnumValue.h"
+#endif
