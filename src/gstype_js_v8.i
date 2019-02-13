@@ -453,8 +453,8 @@ static bool convertObjectToFloat(v8::Local<v8::Value> value, float* floatValPtr)
         }
         *floatValPtr = value->NumberValue();
 
-        return (*floatValPtr < std::numeric_limits<float>::max() &&
-                *floatValPtr > -1 *std::numeric_limits<float>::max());
+        return (*floatValPtr <= std::numeric_limits<float>::max() &&
+                *floatValPtr >= -1 *std::numeric_limits<float>::max());
     }
 }
 }
