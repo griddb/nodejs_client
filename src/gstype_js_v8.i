@@ -373,21 +373,27 @@ static void cleanString(const GSChar* string, int alloc){
 }
 
 /**
+ * Support check number is int64_t
+ */
+%fragment("isInt64", "header") {
+static bool isInt64(double x) {
+    return x == static_cast<double>(static_cast<int64_t>(x));
+}
+}
+/**
  * Support convert type from object to long.
  */
-%fragment("convertObjectToLong", "header") {
-static bool convertObjectToLong(v8::Local<v8::Value> value, long* longVal) {
+%fragment("convertObjectToLong", "header", fragment = "isInt64") {
+static bool convertObjectToLong(v8::Local<v8::Value> value, int64_t* longVal) {
     int checkConvert = 0;
-    if (value->IsInt32()) {
+    if (isInt64(value->NumberValue())) {
         //input can be integer
-        long int intVal;
-        checkConvert = SWIG_AsVal_long(value, &intVal);
+        checkConvert = SWIG_AsVal_long(value, longVal);
         if (!SWIG_IsOK(checkConvert)) {
             return false;
         }
-        *longVal = intVal;
         //When input value is integer, it should be between -9007199254740992(-2^53)/9007199254740992(2^53).
-        return (-9007199254740992 <= intVal && 9007199254740992 >= intVal);
+        return (-9007199254740992 <= *longVal && 9007199254740992 >= *longVal);
     } else {
         return false;
     }
