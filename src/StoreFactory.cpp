@@ -147,7 +147,9 @@ namespace griddb {
     string StoreFactory::get_version() {
         return CLIENT_VERSION;
     }
-
+    /*
+     * Set attribute: mFactory
+     */
     void StoreFactory::set_factory(GSGridStoreFactory* factory) {
         mFactory = factory;
     }

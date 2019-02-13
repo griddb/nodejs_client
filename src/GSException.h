@@ -19,9 +19,12 @@
 
 #include <exception>
 #include <string>
+
 #include "gridstore.h"
 
 using namespace std;
+
+#define DEFAULT_ERROR_CODE -1
 
 namespace griddb {
 
@@ -37,7 +40,7 @@ class GSException : public exception {
     public:
         GSException(int32_t code) : exception(), mCode(code), mResource(NULL) {
             mMessage = "Error with number " + to_string((long long int)mCode);
-            if (mCode != -1) {
+            if (mCode != DEFAULT_ERROR_CODE) {
                 //Case exception with error code.
                 mIsTimeout = gsIsTimeoutError(mCode);
             }
@@ -46,8 +49,8 @@ class GSException : public exception {
             }
         }
         GSException(const char* message) : exception(),
-            mCode(-1), mMessage(message), mResource(NULL) {
-            if (mCode != -1) {
+            mCode(DEFAULT_ERROR_CODE), mMessage(message), mResource(NULL) {
+            if (mCode != DEFAULT_ERROR_CODE) {
                 //Case exception with error code.
                 mIsTimeout = gsIsTimeoutError(mCode);
             }
@@ -56,8 +59,8 @@ class GSException : public exception {
             }
         }
         GSException(void *resource, const char* message) : exception(),
-            mCode(-1), mMessage(message), mResource(resource) {
-            if (mCode != -1) {
+            mCode(DEFAULT_ERROR_CODE), mMessage(message), mResource(resource) {
+            if (mCode != DEFAULT_ERROR_CODE) {
                 //Case exception with error code.
                 mIsTimeout = gsIsTimeoutError(mCode);
             }
@@ -68,7 +71,7 @@ class GSException : public exception {
         GSException(void *resource, int32_t code) : exception(),
             mCode(code), mResource(resource) {
             mMessage = "Error with number " + to_string((long long int)mCode);
-            if (mCode != -1) {
+            if (mCode != DEFAULT_ERROR_CODE) {
                 //Case exception with error code.
                 mIsTimeout = gsIsTimeoutError(mCode);
             }
@@ -78,7 +81,7 @@ class GSException : public exception {
         }
         GSException(int32_t code, const char* message) : exception(),
             mCode(code), mMessage(message), mResource(NULL) {
-            if (mCode != -1) {
+            if (mCode != DEFAULT_ERROR_CODE) {
                 //Case exception with error code.
                 mIsTimeout = gsIsTimeoutError(mCode);
             }
@@ -88,7 +91,7 @@ class GSException : public exception {
         }
         GSException(void *resource, int32_t code, const char* message) : exception(),
             mCode(code), mMessage(message), mResource(resource) {
-            if (mCode != -1) {
+            if (mCode != DEFAULT_ERROR_CODE) {
                 //Case exception with error code.
                 mIsTimeout = gsIsTimeoutError(mCode);
             }
@@ -122,7 +125,7 @@ class GSException : public exception {
             return gsGetErrorStackSize(mResource);
         }
         /**
-         * Get error stack code. Convert from C-API:  gsGetErrorCode.
+         * Get error code. Convert from C-API:  gsGetErrorCode.
         */
         GSResult get_error_code(size_t stack_index) {
             return gsGetErrorCode(mResource, stack_index);

@@ -20,13 +20,13 @@
 using namespace std;
 
 namespace griddb {
-
+// Represents the type(s) of a Container.
 class ContainerType {
     public:
         static const int COLLECTION = 0;
         static const int TIME_SERIES = 1;
 };
-
+// Represents the type(s) of indexes set on a Container.
 class IndexType {
     public:
         static const int DEFAULT = -1;
@@ -34,14 +34,14 @@ class IndexType {
         static const int HASH = 1 << 1;
         static const int SPATIAL = 1 << 2;
 };
-
+// The type of content that can be extracted from GSRowSet.
 class RowSetType {
     public:
         static const int CONTAINER_ROWS = 0;
         static const int AGGREGATION_RESULT = 1;
         static const int QUERY_ANALYSIS = 2;
 };
-
+// The options for fetching the result of a query.
 class FetchOption {
     public:
         static const int LIMIT = 0;
@@ -59,7 +59,7 @@ class FetchOption {
 
 #endif
 };
-
+// Represents the time unit(s) used in TimeSeries data operation.
 class TimeUnit {
     public:
         static const int YEAR = 0;
@@ -70,7 +70,7 @@ class TimeUnit {
         static const int SECOND = 5;
         static const int MILLISECOND = 6;
 };
-
+// Represents the type(s) of field values in GridDB.
 class Type {
     public:
         static const int STRING = 0;
@@ -98,6 +98,7 @@ class Type {
         static const int NULL_TYPE = -1;
 #endif
 };
+// Sum of bits of value of the flag indicating the option setting for Column.
 class TypeOption {
     public:
         static const int NULLABLE = 1 << 1;

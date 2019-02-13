@@ -50,13 +50,27 @@ class ExpirationInfo {
             mTimeSeriesProps.compressionWindowSize = 0;
             mTimeSeriesProps.compressionWindowSizeUnit = GS_TIME_UNIT_YEAR;
         };
-        ~ExpirationInfo() {};
-        int get_time() {return mTimeSeriesProps.rowExpirationTime;};
-        void set_time(int time) {mTimeSeriesProps.rowExpirationTime = time;};
-        GSTimeUnit get_time_unit() {return mTimeSeriesProps.rowExpirationTimeUnit;};
-        void set_time_unit(GSTimeUnit unit) {mTimeSeriesProps.rowExpirationTimeUnit = unit;};
-        int get_division_count() {return mTimeSeriesProps.expirationDivisionCount;};
-        void set_division_count(int division_count) {mTimeSeriesProps.expirationDivisionCount = division_count;};
+        ~ExpirationInfo() {
+            //nothing to do
+        };
+        int get_time() {
+            return mTimeSeriesProps.rowExpirationTime;
+        };
+        void set_time(int time) {
+            mTimeSeriesProps.rowExpirationTime = time;
+        };
+        GSTimeUnit get_time_unit() {
+            return mTimeSeriesProps.rowExpirationTimeUnit;
+        };
+        void set_time_unit(GSTimeUnit unit) {
+            mTimeSeriesProps.rowExpirationTimeUnit = unit;
+        };
+        int get_division_count() {
+            return mTimeSeriesProps.expirationDivisionCount;
+        };
+        void set_division_count(int division_count) {
+            mTimeSeriesProps.expirationDivisionCount = division_count;
+        };
         GSTimeSeriesProperties* gs_ts() {
             return &mTimeSeriesProps;
         };

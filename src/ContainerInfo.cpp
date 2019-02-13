@@ -132,7 +132,9 @@ namespace griddb {
             delete mExpInfo;
         }
     }
-
+    /*
+     * Set attribute: mContainerInfo.name
+     */
     void ContainerInfo::set_name(GSChar* containerName) {
         if (mContainerInfo.name) {
             free((void*) mContainerInfo.name);
@@ -143,27 +145,39 @@ namespace griddb {
             mContainerInfo.name = strdup(containerName);
         }
     }
-
+    /*
+     * Set attribute: mContainerInfo.type
+     */
     void ContainerInfo::set_type(GSContainerType containerType) {
         mContainerInfo.type = containerType;
     }
-
+    /*
+     * Set attribute: mContainerInfo.rowKeyAssigned
+     */
     void ContainerInfo::set_row_key_assigned(bool rowKeyAssigned) {
         mContainerInfo.rowKeyAssigned = rowKeyAssigned;
     }
-
+    /*
+     * Get attribute: mContainerInfo.name
+     */
     const GSChar* ContainerInfo::get_name() {
         return mContainerInfo.name;
     }
-
+    /*
+     * Get attribute: mContainerInfo.type
+     */
     GSContainerType ContainerInfo::get_type() {
         return mContainerInfo.type;
     }
-
+    /*
+     * Get attribute: mContainerInfo.columnInfoList
+     */
     GSColumnInfo ContainerInfo::get_column_info(size_t column) {
         return mContainerInfo.columnInfoList[column];
     }
-
+    /*
+     * Get attribute: mContainerInfo.rowKeyAssigned
+     */
     bool ContainerInfo::get_row_key_assigned() {
         return mContainerInfo.rowKeyAssigned;
     }
