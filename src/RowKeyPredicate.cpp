@@ -49,36 +49,45 @@ namespace griddb {
      * Returns the value of Row key at the start and end position of the range condition
      */
     void RowKeyPredicate::get_range(Field* startField, Field* finishField) {
+        startField->type = -1; // for all versions which do not support GS_TYPE_NULL
+        finishField->type = -1; // for all versions which do not support GS_TYPE_NULL
         GSType key_type = get_key_type();
-        startField->type = key_type;
-        finishField->type = key_type;
-        const GSValue *startKey;
+        const GSValue *startKey = NULL;
+        const GSValue *endKey = NULL;
         GSResult ret = gsGetPredicateStartKeyGeneral(mPredicate, &startKey);
         if (ret != GS_RESULT_OK) {
             throw GSException(mPredicate, ret);
         }
-        if (startField->type == GS_TYPE_STRING) {
-            if (startKey->asString) {
-                startField->value.asString = strdup(startKey->asString);
+        if (startKey != NULL) {
+            startField->type = key_type;
+            if (startField->type == GS_TYPE_STRING) {
+                if (startKey->asString) {
+                    startField->value.asString = strdup(startKey->asString);
+                } else {
+                    startField->value.asString = NULL;
+                }
             } else {
-                startField->value.asString = NULL;
+                startField->value = *startKey;
             }
-        } else {
-            startField->value = *startKey;
         }
-        const GSValue *endKey;
         ret = gsGetPredicateFinishKeyGeneral(mPredicate, &endKey);
         if (ret != GS_RESULT_OK) {
+            if (startField->type == GS_TYPE_STRING && startField->value.asString) {
+                free((void*) startField->value.asString);
+            }
             throw GSException(mPredicate, ret);
         }
-        if (finishField->type == GS_TYPE_STRING) {
-            if (endKey->asString) {
-                finishField->value.asString = strdup(endKey->asString);
+        if (endKey != NULL) {
+            finishField->type = key_type;
+            if (finishField->type == GS_TYPE_STRING) {
+                if (endKey->asString) {
+                    finishField->value.asString = strdup(endKey->asString);
+                } else {
+                    finishField->value.asString = NULL;
+                }
             } else {
-                finishField->value.asString = NULL;
+                finishField->value = *endKey;
             }
-        } else {
-            finishField->value = *endKey;
         }
     }
     /*
