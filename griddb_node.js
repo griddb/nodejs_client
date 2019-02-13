@@ -8,11 +8,19 @@ class StoreFactory {
         this.factory = factory;
     }
     getStore(obj) {
-        return new Store(this.factory.getStore(obj));
+        try {
+            return new Store(this.factory.getStore(obj));
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
     }
 
     static getInstance() {
-        return new StoreFactory(griddb.StoreFactory_.getInstance());
+        try {
+            return new StoreFactory(griddb.StoreFactory_.getInstance());
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
     }
     getVersion() {
         return this.factory.getVersion();
@@ -646,22 +654,46 @@ class GSException{
     }
     // Sync function
     isTimeout() {
-        return this.exception.isTimeout();
+        try {
+            return this.exception.isTimeout();
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
     }
     getErrorStackSize() {
-        return this.exception.getErrorStackSize();
+        try {
+            return this.exception.getErrorStackSize();
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
     }
     getErrorCode(stackIndex) {
-        return this.exception.getErrorCode(stackIndex);
+        try {
+            return this.exception.getErrorCode(stackIndex);
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
     }
     getMessage(stackIndex) {
-        return this.exception.getMessage(stackIndex);
+        try {
+            return this.exception.getMessage(stackIndex);
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
     }
     getLocation() {
-        return this.exception.getLocation(stackIndex);
+        try {
+            return this.exception.getLocation(stackIndex);
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
     }
     what() {
-        return this.exception.what();
+        try {
+            return this.exception.what();
+        } catch(err) {
+            throw(convertToGSException(err));
+        }
     }
 }
 
