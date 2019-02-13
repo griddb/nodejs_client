@@ -32,10 +32,11 @@ namespace griddb {
  * This class creates exception corresponding to error code
  */
 class GSException : public exception {
-    bool mIsTimeout;
-    int32_t mCode;
-    string mMessage;
-    void *mResource;
+    private:
+        bool mIsTimeout;
+        int32_t mCode;
+        string mMessage;
+        void *mResource;
 
     public:
         GSException(int32_t code) : exception(), mCode(code), mResource(NULL) {

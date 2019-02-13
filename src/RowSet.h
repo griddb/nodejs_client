@@ -17,15 +17,16 @@
 #ifndef _ROWSET_H_
 #define _ROWSET_H_
 
+#include <memory>
+#include <string>
+#include <stdio.h>
+#include <time.h>
+
 #include "gridstore.h"
 #include "Field.h"
 #include "AggregationResult.h"
 #include "QueryAnalysisEntry.h"
-
-#include <memory>
-#include <string>
-#include "stdio.h"
-#include "time.h"
+#include "GSException.h"
 
 using namespace std;
 

@@ -17,24 +17,25 @@
 #ifndef SRC_QUERYANALYSISENTRY_H_
 #define SRC_QUERYANALYSISENTRY_H_
 
+#include <stdio.h>
+#include <string.h>
+
 #include "gridstore.h"
 #include "GSException.h"
-#include "stdio.h"
-#include "string.h"
 
 using namespace std;
 
 namespace griddb {
 
 class QueryAnalysisEntry {
-    GSQueryAnalysisEntry* mQueryAnalysis;
+    private:
+        GSQueryAnalysisEntry* mQueryAnalysis;
 
     public:
         QueryAnalysisEntry(GSQueryAnalysisEntry* queryAnalysis);
         ~QueryAnalysisEntry();
         void close();
         void get(GSQueryAnalysisEntry* queryAnalysis);
-    private:
 
 };
 

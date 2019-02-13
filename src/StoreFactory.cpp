@@ -15,7 +15,6 @@
 */
 
 #include "StoreFactory.h"
-#include "GSException.h"
 
 #define MAX_PROPS 10
 

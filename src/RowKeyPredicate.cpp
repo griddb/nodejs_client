@@ -15,8 +15,6 @@
 */
 
 #include "RowKeyPredicate.h"
-#include "GSException.h"
-#include <string.h>
 
 namespace griddb {
 

@@ -15,8 +15,6 @@
 */
 
 #include "RowSet.h"
-#include "GSException.h"
-#include "QueryAnalysisEntry.h"
 
 namespace griddb {
 

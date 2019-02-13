@@ -19,6 +19,7 @@
 
 #include "Field.h"
 #include "Query.h"
+#include "GSException.h"
 
 using namespace std;
 

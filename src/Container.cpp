@@ -15,7 +15,6 @@
 */
 
 #include "Container.h"
-#include "GSException.h"
 
 namespace griddb {
 

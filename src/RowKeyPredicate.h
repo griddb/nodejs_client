@@ -19,10 +19,11 @@
 
 #include <string>
 #include <vector>
-#include "gridstore.h"
-#include "Field.h"
 #include <string.h>
 
+#include "gridstore.h"
+#include "Field.h"
+#include "GSException.h"
 
 using namespace std;
 

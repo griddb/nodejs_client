@@ -17,12 +17,14 @@
 #ifndef _STORE_H_
 #define _STORE_H_
 
+#include <map>
+#include <vector>
+
 #include "ContainerInfo.h"
 #include "Container.h"
 #include "PartitionController.h"
 #include "RowKeyPredicate.h"
-#include <map>
-#include <vector>
+#include "GSException.h"
 
 using namespace std;
 

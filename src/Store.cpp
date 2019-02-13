@@ -15,7 +15,6 @@
 */
 
 #include "Store.h"
-#include "GSException.h"
 
 namespace griddb {
 

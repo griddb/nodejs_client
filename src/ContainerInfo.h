@@ -19,9 +19,9 @@
 
 #include <string>
 #include <cstring>
+#include <utility>
 #include "TimeSeriesProperties.h"
 #include "ExpirationInfo.h"
-#include <utility>
 #include "GSException.h"
 
 //Support column_info_list attribute
@@ -38,13 +38,14 @@ class ContainerInfo {
     /**
      * Contains information about a specific container
      */
-    GSContainerInfo mContainerInfo;
+    private:
+        GSContainerInfo mContainerInfo;
 
-    //tmp attribute to get column info list
-    ColumnInfoList mColumnInfoList;
+        //tmp attribute to get column info list
+        ColumnInfoList mColumnInfoList;
 
-    //tmp attribute support get expiration attribute
-    ExpirationInfo* mExpInfo;
+        //tmp attribute support get expiration attribute
+        ExpirationInfo* mExpInfo;
 
     public:
         ContainerInfo(GSContainerInfo *containerInfo);

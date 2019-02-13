@@ -19,14 +19,14 @@
 
 #include "gridstore.h"
 #include "GSException.h"
-#include <vector>
 
 namespace griddb {
 
 class PartitionController {
-    GSPartitionController *mController;
-
     friend class Store;
+
+    private:
+        GSPartitionController *mController;
 
     public:
         ~PartitionController();

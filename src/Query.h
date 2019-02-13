@@ -29,12 +29,11 @@ namespace griddb {
  * Convert from GSQuery
  */
 class Query {
-    GSQuery *mQuery;
-
     friend class Container;
-
-    GSContainerInfo *mContainerInfo;
-    GSRow* mRow;
+    private:
+        GSQuery *mQuery;
+        GSContainerInfo *mContainerInfo;
+        GSRow* mRow;
 
     public:
         ~Query();
