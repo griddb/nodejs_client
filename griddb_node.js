@@ -32,11 +32,11 @@ class Store {
     }
 
     set timestampOutput(value) {
-        this.store.timestamp_output_with_float = value;
+        this.store.timestampOutput = value;
     }
 
     get timestampOutput() {
-        return this.store.timestamp_output_with_float;
+        return this.store.timestampOutput;
     }
 
     // Async functions
@@ -192,11 +192,11 @@ class Container {
     }
 
     set timestampOutput(value) {
-        this.container.timestamp_output_with_float = value;
+        this.container.timestampOutput = value;
     }
 
     get timestampOutput() {
-        return this.container.timestamp_output_with_float;
+        return this.container.timestampOutput;
     }
 
     // Async functions
@@ -429,11 +429,11 @@ class RowSet {
     }
 
     set timestampOutput(value) {
-        this.rowSet.timestamp_output_with_float = value;
+        this.rowSet.timestampOutput = value;
     }
 
     get timestampOutput() {
-        return this.rowSet.timestamp_output_with_float;
+        return this.rowSet.timestampOutput;
     }
 
     // Async functions
@@ -502,11 +502,11 @@ class AggregationResult {
         this.aggResult = aggResult;
     }
     set timestampOutput(value) {
-        this.aggResult.timestamp_output_with_float = value;
+        this.aggResult.timestampOutput = value;
     }
 
     get timestampOutput() {
-        return this.aggResult.timestamp_output_with_float;
+        return this.aggResult.timestampOutput;
     }
 
     // Sync function

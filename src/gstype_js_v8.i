@@ -25,6 +25,8 @@
 
 // rename all method to camel cases
 %rename("%(lowercamelcase)s", %$isfunction) "";
+//Correct attribute name to camel case
+%rename(timestampOutput) *::timestamp_output_with_float;
 /*
  * ignore unnecessary functions
  */
