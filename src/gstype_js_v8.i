@@ -1505,19 +1505,23 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
 }
 
 %typemap(argout, fragment = "getRowFields") (GSRow *rowdata) (v8::Local<v8::Array> obj, v8::Handle<v8::Value> val) {
-    GSRow* row = arg1->getGSRowPtr();
-    obj = SWIGV8_ARRAY_NEW();
-    bool retVal;
-    int errorColumn;
-    GSType errorType;
-    retVal = getRowFields(row, arg1->getColumnCount(), arg1->getGSTypeList(), arg1->timestamp_output_with_float, &errorColumn, &errorType, obj);
-    if (retVal == false) {
-        char errorMsg[60];
-        sprintf(errorMsg, "Can't get data for field %d with type%d", errorColumn, errorType);
-        SWIG_V8_Raise(errorMsg);
-        SWIG_fail;
+    if (result == GS_FALSE) {
+        $result = SWIGV8_NULL();
+    } else {
+        GSRow* row = arg1->getGSRowPtr();
+        obj = SWIGV8_ARRAY_NEW();
+        bool retVal;
+        int errorColumn;
+        GSType errorType;
+        retVal = getRowFields(row, arg1->getColumnCount(), arg1->getGSTypeList(), arg1->timestamp_output_with_float, &errorColumn, &errorType, obj);
+        if (retVal == false) {
+            char errorMsg[60];
+            sprintf(errorMsg, "Can't get data for field %d with type %d", errorColumn, errorType);
+            SWIG_V8_Raise(errorMsg);
+            SWIG_fail;
+        }
+        $result = obj;
     }
-    $result = obj;
 }
 
 /**
