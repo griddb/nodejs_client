@@ -2504,12 +2504,52 @@ static void freeargContainerInfo(const GSChar* name, const GSColumnInfo* props,
 }
 
 //Correct check for input integer: should check range and type
-%typemap(in) (int) {
-    v8::Local<v8::Value> obj = $input;
+%fragment("convertObjectToInt", "header", fragment = "SWIG_AsVal_bool", fragment = "SWIG_AsVal_int") {
+static bool convertObjectToInt(v8::Local<v8::Value> value, int* intValPtr) {
+    if (!intValPtr) {
+        return false;
+    }
+    if (!value->IsInt32()) {
+        return false;
+    }
+    *intValPtr = value->IntegerValue();
+    return true;
+}
+}
 
-    if (!obj->IsInt32()) {
+%typemap(in, fragment = "convertObjectToInt") (int) {
+    v8::Local<v8::Value> obj = $input;
+    bool checkConvert = convertObjectToInt(obj, &$1);
+    if (!checkConvert) {
         SWIG_V8_Raise("Type should be integer value");
         SWIG_fail;
     }
-    $1 = obj->IntegerValue();
 }
+
+//Correct check for input size_t: should be integer, not float
+%fragment("convertObjectToSizeT", "header", fragment = "SWIG_AsVal_size_t") {
+static bool convertObjectToSizeT(v8::Local<v8::Value> value, size_t* intValPtr) {
+    if (!intValPtr) {
+        return false;
+    }
+    int checkConvert = SWIG_AsVal_size_t(value, intValPtr);
+    if (!SWIG_IsOK(checkConvert)) {
+        return false;
+    }
+    if (value->NumberValue() != *intValPtr) {
+        return false;
+    }
+    return true;
+}
+}
+
+%typemap(in, fragment = "convertObjectToSizeT") (size_t) {
+    v8::Local<v8::Value> obj = $input;
+
+    bool vbool = convertObjectToSizeT(obj, &$1);
+    if (!vbool) {
+        SWIG_V8_Raise("Type should be unsigned integer value");
+        SWIG_fail;
+    }
+}
+
