@@ -16,7 +16,6 @@
 
 #define UTC_TIMESTAMP_MAX 253402300799.999 // Max timestamp in seconds
 %{
-#include <Field.h>
 #include <ctime>
 #include <limits>
 #include <node_buffer.h>
@@ -1997,7 +1996,7 @@ static void freeargContainerMultiPut(GSRow** listRowdata, int rowCount) {
                 retVal = getRowFields(row, arg1->getColumnCount(), arg1->getGSTypeList(), arg1->timestamp_output_with_float, &errorColumn, &errorType, obj);
                 if (retVal == false) {
                     char errorMsg[60];
-                    sprintf(errorMsg, "Can't get data for field %d with type%d", errorColumn, errorType);
+                    sprintf(errorMsg, "Can't get data for field %d with type %d", errorColumn, errorType);
                     SWIG_V8_Raise(errorMsg);
                     SWIG_fail;
                 }
@@ -2239,7 +2238,7 @@ static void freeargColumnInfoList(ColumnInfoList* infoList, int* alloc) {
     freeargContainerIndex($1, $3);
 }
 
-%fragment("freeargContainerIndex", "header", fragment = "cleanString") {
+%fragment("freeargContainerIndex", "header") {
     //SWIG does not include freearg in fail: label (not like Python, so we need this function)
 static void freeargContainerIndex(const char* column_name, const char* name) {
     if (column_name) {
