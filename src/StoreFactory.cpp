@@ -77,30 +77,27 @@ namespace griddb {
     Store* StoreFactory::get_store(const char* host, int32_t port, const char* cluster_name,
             const char* database, const char* user, const char* password,
             const char* notification_member, const char* notification_provider) {
-        int index = 0;
+        size_t index = 0;
         GSPropertyEntry local_props[MAX_PROPS] = {0};
         std::string lport = std::to_string((long long int)port);
 
         if (check_multicast(host)) {
             set_property_entry(&local_props[0], "notificationAddress", host);
             set_property_entry(&local_props[1], "notificationPort", lport.c_str());
-            index = 2;
-        } else {
-            if (host && host[0] != '\0') {
-                set_property_entry(&local_props[0], "host", host);
-                set_property_entry(&local_props[1], "port", lport.c_str());
-                index += 2;
-            }
+            index += 2;
+        } else if (host && host[0] != '\0') {
+            set_property_entry(&local_props[0], "host", host);
+            set_property_entry(&local_props[1], "port", lport.c_str());
+            index += 2;
+        }
 
-            if (notification_member && notification_member[0] != '\0') {
-                set_property_entry(&local_props[index], "notificationMember", notification_member);
-                index++;
-            }
-            if (notification_provider && notification_provider[0] != '\0') {
-                set_property_entry(&local_props[index], "notificationProvider", notification_provider);
-                index++;
-            }
-
+        if (notification_member && notification_member[0] != '\0') {
+            set_property_entry(&local_props[index], "notificationMember", notification_member);
+            index++;
+        }
+        if (notification_provider && notification_provider[0] != '\0') {
+            set_property_entry(&local_props[index], "notificationProvider", notification_provider);
+            index++;
         }
         if (cluster_name && cluster_name[0] != '\0') {
             set_property_entry(&local_props[index], "clusterName", cluster_name);
