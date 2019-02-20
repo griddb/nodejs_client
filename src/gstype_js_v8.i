@@ -1555,7 +1555,7 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
             // Get container name
             res = SWIG_AsCharPtrAndSize(keys->Get(i), &v, &sizeTmp, &alloc[i]);
             if (!SWIG_IsOK(res)) {
-                freeargStoreMultiPut($1, $2, $3, $4, alloc);
+                freeargStoreMultiPut($1, $2, $3, i, alloc);
                 %variable_fail(res, "String", "containerName");
             }
             if (v) {
@@ -1566,7 +1566,7 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
             }
             // Get row
             if (!(obj->Get(keys->Get(i)))->IsArray()) {
-                freeargStoreMultiPut($1, $2, $3, $4, alloc);
+                freeargStoreMultiPut($1, $2, $3, i, alloc);
                 SWIG_V8_Raise("Expected an array as rowList");
                 SWIG_fail;
             }
@@ -1595,7 +1595,7 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
                         sprintf(errorMsg, "Invalid value for column %d, type should be : %d", k, typeArr[k]);
                         delete containerInfoTmp;
                         free((void *) typeArr);
-                        freeargStoreMultiPut($1, $2, $3, $4, alloc);
+                        freeargStoreMultiPut($1, $2, $3, i, alloc);
                         SWIG_V8_Raise(errorMsg);
                         SWIG_fail;
                     }
