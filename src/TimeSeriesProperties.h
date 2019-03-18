@@ -22,16 +22,17 @@
 namespace griddb {
 
 class TimeSeriesProperties {
-    GSTimeSeriesProperties mTsProps;
+    private:
+        GSTimeSeriesProperties mTsProps;
 
     public:
         TimeSeriesProperties(const GSTimeSeriesProperties* timeSeriesProps);
         TimeSeriesProperties(int32_t elapsedTime, GSTimeUnit timeUnit, int32_t ExpirationDivisionCount);
         ~TimeSeriesProperties();
-
+        // APIs to set values for expiration_time and expiration_division_count
         void set_row_expiration_time(int32_t elapsedTime, GSTimeUnit timeUnit);
         void set_expiration_division_count(int32_t count);
-
+        // APIs to get values of expiration_time, expiration_time_unit, expiration_division_count and TimeSeriesProperties
         int get_row_expiration_time();
         GSTimeUnit get_row_expiration_time_unit();
         int get_expiration_division_count();

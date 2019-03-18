@@ -51,7 +51,7 @@ namespace griddb {
      */
     int64_t PartitionController::get_container_count(int32_t partition_index) {
         int64_t value;
-        GSResult ret = gsGetPartitionContainerCount(mController, partition_index,&value);
+        GSResult ret = gsGetPartitionContainerCount(mController, partition_index, &value);
 
         // Check ret, if error, throw exception
         if (ret != GS_RESULT_OK) {

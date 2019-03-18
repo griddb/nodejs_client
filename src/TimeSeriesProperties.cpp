@@ -27,23 +27,41 @@ namespace griddb {
     }
     TimeSeriesProperties::~TimeSeriesProperties() {
     }
+    /*
+     * Set attribute: mTsProps.rowExpirationTime & mTsProps.rowExpirationTimeUnit
+     */
     void TimeSeriesProperties::set_row_expiration_time(int elapsedTime,
             GSTimeUnit timeUnit) {
         mTsProps.rowExpirationTime = elapsedTime;
         mTsProps.rowExpirationTimeUnit = timeUnit;
     }
+    /*
+     * Set attribute: mTsProps.expirationDivisionCount
+     */
     void TimeSeriesProperties::set_expiration_division_count(int count) {
         mTsProps.expirationDivisionCount = count;
     }
+    /*
+     * Get attribute: mTsProps.rowExpirationTime
+     */
     int TimeSeriesProperties::get_row_expiration_time() {
         return mTsProps.rowExpirationTime;
     }
+    /*
+     * Get attribute: mTsProps.rowExpirationTimeUnit
+     */
     GSTimeUnit TimeSeriesProperties::get_row_expiration_time_unit() {
         return mTsProps.rowExpirationTimeUnit;
     }
+    /*
+     * Get attribute: mTsProps.expirationDivisionCount
+     */
     int TimeSeriesProperties::get_expiration_division_count() {
         return mTsProps.expirationDivisionCount;
     }
+    /*
+     * Get attribute: mTsProps
+     */
     GSTimeSeriesProperties* TimeSeriesProperties::gs_ptr() {
         return &mTsProps;
     }
