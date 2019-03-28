@@ -79,7 +79,7 @@ GridDB Server need to be started in advance.
 
         $ node sample/sample.js <GridDB notification address> <GridDB notification port>
             <GridDB cluster name> <GridDB user> <GridDB password>
-          -->['name01', false, 1, 'ABCDEFGHIJ' ]
+          -->[ 'name01', false, 1, <Buffer 41 42 43 44 45 46 47 48 49 4a> ]
 
 ## Function
 
