@@ -75,11 +75,8 @@ enum GSTypeTag {
     GS_TYPE_LONG_ARRAY,
     GS_TYPE_FLOAT_ARRAY,
     GS_TYPE_DOUBLE_ARRAY,
-    GS_TYPE_TIMESTAMP_ARRAY
-
-#if GS_COMPATIBILITY_SUPPORT_3_5
+    GS_TYPE_TIMESTAMP_ARRAY,
     GS_TYPE_NULL = -1
-#endif
 };
 #endif
 
@@ -97,15 +94,11 @@ enum GSFetchOptionTag {
 
     GS_FETCH_LIMIT,
 
-#if GS_COMPATIBILITY_SUPPORT_1_5
-
 #if GS_INTERNAL_DEFINITION_VISIBLE
 #if !GS_COMPATIBILITY_DEPRECATE_FETCH_OPTION_SIZE
 
     GS_FETCH_SIZE = (GS_FETCH_LIMIT + 1)
 #endif
-#endif
-
 #endif
 };
 
@@ -132,12 +125,9 @@ enum GSTypeOptionTag {
 
     GS_TYPE_OPTION_KEY = 1 << 0,
 
-#if GS_COMPATIBILITY_SUPPORT_3_5
     GS_TYPE_OPTION_NULLABLE = 1 << 1,
 
-    GS_TYPE_OPTION_NOT_NULL = 1 << 2,
-#endif
-
+    GS_TYPE_OPTION_NOT_NULL = 1 << 2
 };
 
 typedef int32_t GSTypeOption;

@@ -48,6 +48,10 @@
 %feature("new") griddb::Store::partition_info;
 %feature("new") griddb::StoreFactory::get_store;
 %feature("new") griddb::StoreFactory::get_instance;
+#if defined(SWIGJAVASCRIPT)
+//Mark attribute is new object
+%feature("new") griddb::Store::partitionInfo;
+#endif
 
 #if defined(SWIGPYTHON)
 %include "gstype_python.i"
@@ -82,11 +86,6 @@
 #include "Store.h"
 #include "StoreFactory.h"
 %}
-#if !defined(SWIGJAVASCRIPT)
-%{
-#include "TimestampUtils.h"
-%}
-#endif
 #if defined(SWIGJAVASCRIPT) || defined(SWIGPHP)
 %{
 #include "EnumValue.h"
@@ -99,6 +98,7 @@
 %shared_ptr(griddb::TimeSeriesProperties)
 %shared_ptr(griddb::ExpirationInfo)
 %shared_ptr(griddb::ContainerInfo)
+%shared_ptr(griddb::Row)
 %shared_ptr(griddb::QueryAnalysisEntry)
 %shared_ptr(griddb::RowSet)
 %shared_ptr(griddb::Query)
@@ -123,9 +123,6 @@
 %include "RowKeyPredicate.h"
 %include "Store.h"
 %include "StoreFactory.h"
-#if !defined(SWIGJAVASCRIPT)
-%include "TimestampUtils.h"
-#endif
 #if defined(SWIGJAVASCRIPT) || defined(SWIGPHP)
 %include "EnumValue.h"
 #endif
