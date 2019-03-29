@@ -19,6 +19,7 @@
 
 #include <map>
 #include <vector>
+#include <assert.h>
 
 #include "ContainerInfo.h"
 #include "Container.h"

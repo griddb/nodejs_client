@@ -22,26 +22,40 @@ namespace griddb {
 
     StoreFactory::StoreFactory() : mFactory(NULL) {
     }
+
     StoreFactory::~StoreFactory() {
         //allRelated = FALSE, since Gridstore object is managed by Store class
         close(GS_FALSE);
     }
+
     /**
-    * Release all GridStore created by this factory and related resources
-    */
+     * @brief Release StoreFactory resource
+     */
     void StoreFactory::close(GSBool allRelated) {
         if (mFactory != NULL) {
             gsCloseFactory(&mFactory, allRelated);
             mFactory = NULL;
         }
     }
+
+    /**
+     * @brief Get a default GSGridStoreFactory instance.
+     * @return The pointer to a pointer variable to store StoreFactory instance
+     */
     StoreFactory* StoreFactory::get_instance() {
         GSGridStoreFactory* pFactory = gsGetDefaultFactory();
-        StoreFactory* factory(new StoreFactory());
-        factory->set_factory(pFactory);
 
-        return factory;
+        try {
+            StoreFactory* factory(new StoreFactory());
+            factory->set_factory(pFactory);
+
+            return factory;
+        } catch (bad_alloc& ba) {
+            gsCloseFactory(&pFactory, GS_FALSE);
+            throw GSException("Memory allocation error");
+        }
     }
+
     /*
      * set GSPropertyEntry
      */
@@ -49,29 +63,44 @@ namespace griddb {
         prop->name = name;
         prop->value = value;
     }
+
     /*
      * Check whether in MULTICAST mode
      */
     bool StoreFactory::check_multicast(const char* address) {
         if (address && address[0] != '\0') {
-            char *tmp = strdup(address);
+            char* tmp;
+            try {
+                Util::strdup((const GSChar**)&tmp, address);
+            } catch (bad_alloc& ba) {
+                throw GSException("Memory allocation error");
+            }
+
             char *octets = strtok((char*)tmp, ".");
             if (octets) {
                 int firstOctet = atoi(octets);
                 int first4Bits = firstOctet >> 4 & 0x0f;
                 if (first4Bits == 0x0E) {
-                    free((void *) tmp);
+                    delete[] tmp;
                     return true;
                 }
             }
-            if (tmp) {
-                free((void *) tmp);
-            }
+            delete[] tmp;
         }
         return false;
     }
-    /*
-     * Returns a Store with the specified properties
+
+    /**
+     * @brief Get a Store with the specified properties
+     * @param *host A destination host name
+     * @param port A destination port number
+     * @param *cluster_name A cluster name
+     * @param *database A database name to be connected
+     * @param *user A user name
+     * @param *password A password for user authentication
+     * @param *notification_member A list of address and port pairs in cluster
+     * @param *notification_provider A URL of address provider
+     * @return The pointer to a pointer variable to store Store instance
      */
     Store* StoreFactory::get_store(const char* host, int32_t port, const char* cluster_name,
             const char* database, const char* user, const char* password,
@@ -116,36 +145,32 @@ namespace griddb {
             index++;
         }
 
-        GSGridStore *store;
-        GSResult ret = gsGetGridStore(mFactory, local_props, index, &store);
+        GSGridStore *gsStore;
+        GSResult ret = gsGetGridStore(mFactory, local_props, index, &gsStore);
 
         // Check ret, if error, throw exception
-        if (ret != GS_RESULT_OK) {
+        if (!GS_SUCCEEDED(ret)) {
             throw GSException(mFactory, ret);
         }
-        return new Store(store);
+
+        try {
+            //return new Store(store);
+            Store* store = new Store(gsStore);
+            return store;
+        } catch (bad_alloc& ba) {
+            gsCloseGridStore(&gsStore, GS_FALSE);
+            throw GSException(mFactory, "Memory allocation error");
+        }
     }
 
     /**
-     * Changes the settings for this Factory.
-     * The changed settings will be reflected in GridStore object which is already created by the specified Factory and GridStore object which will be created later by the Factory.
-     */
-    void StoreFactory::set_properties(const GSPropertyEntry* props,
-            int propsCount) {
-        GSResult ret = gsSetFactoryProperties(mFactory, props, propsCount);
-
-        // Check ret, if error, throw exception
-        if (ret != GS_RESULT_OK) {
-            throw GSException(mFactory, ret);
-        }
-    }
-
-    /*
-     * Return current client version
+     * @brief Get current client version
+     * @return Client version name
      */
     string StoreFactory::get_version() {
         return CLIENT_VERSION;
     }
+
     /*
      * Set attribute: mFactory
      */

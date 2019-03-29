@@ -18,6 +18,7 @@
 #define _QUERY_H_
 
 #include <memory>
+
 #include "gridstore.h"
 #include "RowSet.h"
 #include "GSException.h"
@@ -28,6 +29,7 @@ namespace griddb {
 /**
  * Convert from GSQuery
  */
+
 class Query {
     friend class Container;
     private:

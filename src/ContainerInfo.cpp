@@ -18,36 +18,73 @@
 
 namespace griddb {
 
+    /**
+     * @brief Constructor a new ContainerInfo::ContainerInfo object
+     * @param *containerInfo Stores the information about a specific Container
+     */
     ContainerInfo::ContainerInfo(GSContainerInfo *containerInfo) {
+        assert(containerInfo != NULL);
         init(containerInfo->name, containerInfo->type,
                 containerInfo->columnInfoList, containerInfo->columnCount,
                 containerInfo->rowKeyAssigned, NULL);
         //Assign values from argument to mContainer
         GSTimeSeriesProperties* gsProps = NULL;
+        GSTriggerInfo* triggerInfoList = NULL;
+
+        try {
+            if (containerInfo->timeSeriesProperties) {
+                gsProps = new GSTimeSeriesProperties();
+            }
+
+            if (containerInfo->triggerInfoList) {
+                triggerInfoList = new GSTriggerInfo();
+            }
+
+            if (containerInfo->dataAffinity) {
+                Util::strdup(&mContainerInfo.dataAffinity, containerInfo->dataAffinity);
+            } else {
+                mContainerInfo.dataAffinity = NULL;
+            }
+        } catch (bad_alloc& ba) {
+            //case allocation memory error
+            if (gsProps) {
+                delete gsProps;
+            }
+            if (triggerInfoList) {
+                delete triggerInfoList;
+            }
+            if (mContainerInfo.dataAffinity) {
+                delete[] mContainerInfo.dataAffinity;
+            }
+            throw GSException("Memory allocation error");
+        }
+
         if (containerInfo->timeSeriesProperties) {
-            gsProps = (GSTimeSeriesProperties*) malloc(sizeof(GSTimeSeriesProperties));
             memcpy(gsProps, containerInfo->timeSeriesProperties, sizeof(GSTimeSeriesProperties));
         }
         mContainerInfo.timeSeriesProperties = gsProps;
-        GSTriggerInfo* triggerInfoList = NULL;
+
         if (containerInfo->triggerInfoList) {
-            triggerInfoList = (GSTriggerInfo*) malloc(sizeof(GSTriggerInfo));
             memcpy(triggerInfoList, containerInfo->triggerInfoList, sizeof(GSTriggerInfo));
         }
+
         mContainerInfo.triggerInfoList = triggerInfoList;
-#if GS_COMPATIBILITY_SUPPORT_2_1
-        if (containerInfo->dataAffinity) {
-            mContainerInfo.dataAffinity = strdup(containerInfo->dataAffinity);
-        } else {
-            mContainerInfo.dataAffinity = NULL;
-        }
-#endif
+
         mContainerInfo.columnOrderIgnorable = containerInfo->columnOrderIgnorable;
         mContainerInfo.triggerInfoCount = containerInfo->triggerInfoCount;
         mColumnInfoList.columnInfo = NULL;
         mColumnInfoList.size = 0;
     }
 
+    /**
+     * @brief Constructor a new ContainerInfo::ContainerInfo object
+     * @param *name The name of Container
+     * @param *props Stores the information about the schema of a Column
+     * @param propsCount Number of columns
+     * @param type The type of Container
+     * @param row_key The boolean value indicating whether the Row key Column is assigned
+     * @param *expiration Stores the information about option of TimeSeries configuration
+     */
     ContainerInfo::ContainerInfo(const GSChar* name, const GSColumnInfo* props, int propsCount,
             GSContainerType type, bool row_key, ExpirationInfo* expiration) {
         init(name, type, props, propsCount, row_key, expiration);
@@ -63,28 +100,49 @@ namespace griddb {
         GSChar* containerName = NULL;
         GSTimeSeriesProperties* timeProps = NULL;
 
-        if (propsCount > 0 && props != NULL) {
-            columnInfoList = (GSColumnInfo *) malloc(propsCount*sizeof(GSColumnInfo));
-            //Copy memory of GSColumnInfo list
-            memcpy(columnInfoList, props, propsCount*sizeof(GSColumnInfo));
-            //Copy memory of columns name
-            for (int i = 0; i < propsCount; i++) {
-                if (props[i].name != NULL) {
-                    columnInfoList[i].name = strdup(props[i].name);
-                } else {
-                    columnInfoList[i].name = NULL;
+        try {
+            if (propsCount > 0 && props != NULL) {
+                columnInfoList = new GSColumnInfo[propsCount]();
+                //Copy memory of GSColumnInfo list
+                memcpy(columnInfoList, props, propsCount*sizeof(GSColumnInfo));
+                //Copy memory of columns name
+                for (int i = 0; i < propsCount; i++) {
+                    if (props[i].name != NULL) {
+                        Util::strdup(&(columnInfoList[i].name), props[i].name);
+                    } else {
+                        columnInfoList[i].name = NULL;
+                    }
                 }
             }
+
+            if (expiration != NULL) {
+                timeProps = new GSTimeSeriesProperties();
+            }
+
+            //Container name memory is copied via strdup function
+            if (name != NULL) {
+                Util::strdup((const GSChar**)&containerName, name);
+            }
+        } catch (bad_alloc& ba) {
+            if (columnInfoList) {
+                for (int i = 0; i < propsCount; i++) {
+                    if (columnInfoList[i].name) {
+                        delete[] columnInfoList[i].name;
+                    }
+                }
+                delete[] columnInfoList;
+            }
+            if (containerName) {
+                delete[] containerName;
+            }
+            if (timeProps) {
+                delete timeProps;
+            }
+            throw GSException("Memory allocation error");
         }
 
         if (expiration != NULL) {
-            timeProps = (GSTimeSeriesProperties*) malloc(sizeof(GSTimeSeriesProperties));
             memcpy(timeProps, expiration->gs_ts(), sizeof(GSTimeSeriesProperties));
-        }
-
-        //Container name memory is copied via strdup function
-        if (name != NULL) {
-            containerName = strdup(name);
         }
 
         mContainerInfo = {containerName, type, (size_t)propsCount, columnInfoList, rowKeyAssigned};
@@ -99,7 +157,7 @@ namespace griddb {
     ContainerInfo::~ContainerInfo() {
         //Free memory for the copy of container name
         if (mContainerInfo.name) {
-            free((void*) mContainerInfo.name);
+            delete[] mContainerInfo.name;
         }
 
         //Free memory for the copy of ColumnInfo list
@@ -107,122 +165,160 @@ namespace griddb {
             //Free memory of columns name
             for(int i = 0; i < mContainerInfo.columnCount; i++) {
                 if(mContainerInfo.columnInfoList[i].name) {
-                    free((void *) mContainerInfo.columnInfoList[i].name);
+                    delete[] mContainerInfo.columnInfoList[i].name;
                 }
             }
-            free((void *) mContainerInfo.columnInfoList);
+            delete[] mContainerInfo.columnInfoList;
         }
 
         //Free memory of TimeSeriesProperties if existed
         if (mContainerInfo.timeSeriesProperties) {
-            free((void *) mContainerInfo.timeSeriesProperties);
+            delete mContainerInfo.timeSeriesProperties;
         }
 
         //Free memory of dataAffinity if existed
-#if GS_COMPATIBILITY_SUPPORT_2_1
         if (mContainerInfo.dataAffinity) {
-            free((void *) mContainerInfo.dataAffinity);
+            delete[] mContainerInfo.dataAffinity;
         }
-#endif
+
         //Free memory of triggerInfoList if existed
         if(mContainerInfo.triggerInfoList) {
-            free((void *) mContainerInfo.triggerInfoList);
+            delete mContainerInfo.triggerInfoList;
         }
         if (mExpInfo != NULL) {
             delete mExpInfo;
         }
     }
-    /*
-     * Set attribute: mContainerInfo.name
+
+    /**
+     * @brief Set name of Container which is stored in ContainerInfo
+     * @param *containerName Stores the name of Container
      */
     void ContainerInfo::set_name(GSChar* containerName) {
         if (mContainerInfo.name) {
-            free((void*) mContainerInfo.name);
+            delete[] mContainerInfo.name;
         }
         if (containerName == NULL) {
             mContainerInfo.name = NULL;
         } else {
-            mContainerInfo.name = strdup(containerName);
+            try {
+                Util::strdup(&(mContainerInfo.name), containerName);
+            } catch (bad_alloc& ba) {
+                throw GSException("Memory allocation error");
+            }
         }
     }
-    /*
-     * Set attribute: mContainerInfo.type
+
+    /**
+     * @brief Set type of Container which is stored in ContainerInfo
+     * @param containerType The type of Container
      */
     void ContainerInfo::set_type(GSContainerType containerType) {
         mContainerInfo.type = containerType;
     }
-    /*
-     * Set attribute: mContainerInfo.rowKeyAssigned
+
+    /**
+     * @brief Set rowKeyAssigned for ContainerInfo
+     * @param rowKeyAssigned The boolean value indicating whether the Row key Column is assigned
      */
     void ContainerInfo::set_row_key_assigned(bool rowKeyAssigned) {
         mContainerInfo.rowKeyAssigned = rowKeyAssigned;
     }
-    /*
-     * Get attribute: mContainerInfo.name
+
+    /**
+     * @brief Get name of Container which is stored in ContainerInfo
+     * @return The name of Container
      */
     const GSChar* ContainerInfo::get_name() {
         return mContainerInfo.name;
     }
-    /*
-     * Get attribute: mContainerInfo.type
+
+    /**
+     * @brief Get type of Container which is stored in ContainerInfo
+     * @return The type of Container
      */
     GSContainerType ContainerInfo::get_type() {
         return mContainerInfo.type;
     }
-    /*
-     * Get attribute: mContainerInfo.columnInfoList
+
+    /**
+     * @brief Get columnInfo which is stored in ContainerInfo
+     * @param column The number of column
+     * @return The information of column which is stored in ContainerInfo
      */
     GSColumnInfo ContainerInfo::get_column_info(size_t column) {
+        if (column >= mContainerInfo.columnCount) {
+            throw GSException("Index out of bound error");
+        }
         return mContainerInfo.columnInfoList[column];
     }
-    /*
-     * Get attribute: mContainerInfo.rowKeyAssigned
+
+    /**
+     * @brief Get rowKeyAssigned value of ContainerInfo
+     * @return The boolean value indicating whether the Row key Column is assigned
      */
     bool ContainerInfo::get_row_key_assigned() {
         return mContainerInfo.rowKeyAssigned;
     }
 
     /**
-     * Return GSContainerInfo variable
+     * @brief Get all information of Container
+     * @return A pointer which store all information of Container
      */
     GSContainerInfo* ContainerInfo::gs_info() {
         return &mContainerInfo;
     }
 
     /**
-     *  Set attribute :column_info_list
+     *  @brief Set information of column stored in ContainerInfo
+     *  @param columnInfoList A struct which store information of column
      */
     void ContainerInfo::set_column_info_list(ColumnInfoList columnInfoList) {
         //Free current stored ColumnInfo list
         if (mContainerInfo.columnInfoList) {
             //Free memory of columns name
             for(int i = 0; i < mContainerInfo.columnCount; i++) {
-                free((void *) mContainerInfo.columnInfoList[i].name);
+                delete[] mContainerInfo.columnInfoList[i].name;
             }
-            free((void*) mContainerInfo.columnInfoList);
+            delete[] mContainerInfo.columnInfoList;
         }
 
-        //Copy memory of new ColumnInfo list
-        GSColumnInfo* tmpColumnInfoList = NULL;
-        if (columnInfoList.size > 0 && columnInfoList.columnInfo != NULL) {
-            tmpColumnInfoList = (GSColumnInfo *) malloc(columnInfoList.size*sizeof(GSColumnInfo));
-            //Copy memory of GSColumnInfo list
-            memcpy(tmpColumnInfoList, columnInfoList.columnInfo, columnInfoList.size*sizeof(GSColumnInfo));
-            //Copy memory of columns name
-            for (int i = 0; i < columnInfoList.size; i++) {
-                if (columnInfoList.columnInfo[i].name) {
-                    tmpColumnInfoList[i].name = strdup(columnInfoList.columnInfo[i].name);
-                } else {
-                    tmpColumnInfoList[i].name = NULL;
+        mContainerInfo.columnCount = columnInfoList.size;
+        mContainerInfo.columnInfoList = NULL;
+
+        if (columnInfoList.size == 0 || columnInfoList.columnInfo == NULL) {
+            return;
+        }
+        
+        GSColumnInfo* tmpColumnInfoList;
+        try {
+            tmpColumnInfoList = new GSColumnInfo[columnInfoList.size]();
+        } catch (bad_alloc& ba) {
+            throw GSException("Memory allocation error");
+        }
+        
+        //Copy memory of GSColumnInfo list
+        memcpy(tmpColumnInfoList, columnInfoList.columnInfo, columnInfoList.size*sizeof(GSColumnInfo));
+        //Copy memory of columns name
+        for (int i = 0; i < columnInfoList.size; i++) {
+            if (columnInfoList.columnInfo[i].name) {
+                try {
+                    Util::strdup(&(tmpColumnInfoList[i].name), columnInfoList.columnInfo[i].name);
+                } catch (bad_alloc& ba) {
+                    delete[] tmpColumnInfoList;
+                    tmpColumnInfoList = NULL;
+                    throw GSException("Memory allocation error");
                 }
+            } else {
+                tmpColumnInfoList[i].name = NULL;
             }
         }
         mContainerInfo.columnInfoList = tmpColumnInfoList;
-        mContainerInfo.columnCount = columnInfoList.size;
     }
 
     /**
-     *  Get attribute :column_info_list
+     *  @brief Get information of column stored in ContainerInfo
+     *  @return A struct which store information of column
      */
     ColumnInfoList ContainerInfo::get_column_info_list() {
         mColumnInfoList.columnInfo = (GSColumnInfo*) mContainerInfo.columnInfoList;
@@ -230,25 +326,32 @@ namespace griddb {
         return mColumnInfoList;
     }
 
-    /*
-     * Set attribute: expiration
+    /**
+     *  @brief Set expirationInfo for timeseries container which is stored in ContainerInfo
+     *  @param *expirationInfo A ExpirationInfo object which store the information about optional configuration settings used for newly creating or updating a TimeSeries
      */
     void ContainerInfo::set_expiration_info(ExpirationInfo* expirationInfo) {
-#if GS_COMPATIBILITY_SUPPORT_1_5
         if (mContainerInfo.timeSeriesProperties != NULL) {
-            free((void*) mContainerInfo.timeSeriesProperties);
+            delete mContainerInfo.timeSeriesProperties;
+            mContainerInfo.timeSeriesProperties = NULL;
         }
         if (expirationInfo) {
-            GSTimeSeriesProperties* ts = (GSTimeSeriesProperties*) malloc(sizeof(GSTimeSeriesProperties));
+            GSTimeSeriesProperties* ts;
+            try {
+                ts = new GSTimeSeriesProperties();
+            } catch (bad_alloc& ba) {
+                throw GSException("Memory allocation error");
+            }
+
             memcpy(ts, expirationInfo->gs_ts(), sizeof(GSTimeSeriesProperties));
 
             mContainerInfo.timeSeriesProperties = ts;
         }
-#endif
     }
 
-    /*
-     * Get attribute: expiration
+    /**
+     *  @brief Get expirationInfo for timeseries container which is stored in ContainerInfo
+     *  @return A ExpirationInfo object which store the information about optional configuration settings used for newly creating or updating a TimeSeries
      */
     ExpirationInfo* ContainerInfo::get_expiration_info() {
         if (mContainerInfo.timeSeriesProperties != NULL){
@@ -257,9 +360,13 @@ namespace griddb {
                 mExpInfo->set_time_unit(mContainerInfo.timeSeriesProperties->rowExpirationTimeUnit);
                 mExpInfo->set_division_count(mContainerInfo.timeSeriesProperties->expirationDivisionCount);
             } else {
-                mExpInfo = new ExpirationInfo(mContainerInfo.timeSeriesProperties->rowExpirationTime,
-                    mContainerInfo.timeSeriesProperties->rowExpirationTimeUnit,
-                    mContainerInfo.timeSeriesProperties->expirationDivisionCount);
+                try {
+                    mExpInfo = new ExpirationInfo(mContainerInfo.timeSeriesProperties->rowExpirationTime,
+                            mContainerInfo.timeSeriesProperties->rowExpirationTimeUnit,
+                            mContainerInfo.timeSeriesProperties->expirationDivisionCount);
+                } catch (bad_alloc& ba) {
+                    throw GSException("Memory allocation error");
+                }
             }
         } else {
             mExpInfo = NULL;

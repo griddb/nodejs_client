@@ -22,6 +22,7 @@
 
 #include "gridstore.h"
 #include "GSException.h"
+#include "Util.h"
 
 using namespace std;
 
@@ -30,6 +31,7 @@ namespace griddb {
 class QueryAnalysisEntry {
     private:
         GSQueryAnalysisEntry* mQueryAnalysis;
+        void freeMemory();
 
     public:
         QueryAnalysisEntry(GSQueryAnalysisEntry* queryAnalysis);

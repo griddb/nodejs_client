@@ -17,9 +17,12 @@
 #ifndef _CONTAINER_H_
 #define _CONTAINER_H_
 
+#include <assert.h>
+
 #include "Field.h"
 #include "Query.h"
 #include "GSException.h"
+#include "Util.h"
 
 using namespace std;
 
@@ -42,7 +45,7 @@ class Container {
         GSContainerType get_type();
         void create_index(const char* column_name, GSIndexTypeFlags index_type = GS_INDEX_FLAG_DEFAULT, const char* name=NULL);
         void drop_index(const char* column_name, GSIndexTypeFlags index_type = GS_INDEX_FLAG_DEFAULT, const char* name=NULL);
-        bool put(GSRow *rowContainer);
+        bool put(GSRow *row);
         Query* query(const char *query);
         void abort();
         void flush();
@@ -58,6 +61,7 @@ class Container {
 
     private:
         Container(GSContainer *container, GSContainerInfo* containerInfo);
+        void freeMemoryContainer();
 };
 
 } /* namespace griddb */

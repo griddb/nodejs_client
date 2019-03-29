@@ -18,14 +18,22 @@
 
 namespace griddb {
 
+    /**
+     * @brief Constructor a new Query::Query object
+     * @param *query A pointer holding the information about a query related to a specific GSContainer
+     * @param *containerInfo A pointer holding the information about a specific GSContainer
+     * @param *gsRow A pointer holding the information about a row related to a specific GSContainer
+     */
     Query::Query(GSQuery *query, GSContainerInfo *containerInfo, GSRow *gsRow) : mQuery(query),
             mContainerInfo(containerInfo), mRow(gsRow) {
     }
+
     Query::~Query() {
         close();
     }
+
     /**
-     * Release all resources created by this Query object.
+     * @brief Release Query resource
      */
     void Query::close() {
         if (mQuery) {
@@ -33,65 +41,79 @@ namespace griddb {
             mQuery = NULL;
         }
     }
+
     /**
-     * Fetch data from query result.
+     * @brief Fetch data from query result.
+     * @param for_update Indicates whether it requests a lock for update or not
+     * @return  The pointer to a pointer variable to store GSRowSet instance
      */
     RowSet* Query::fetch(bool for_update) {
-        GSRowSet *rowSet;
+        GSRowSet *gsRowSet;
         // Call method from C-Api.
         GSBool gsForUpdate = (for_update == true ? GS_TRUE:GS_FALSE);
-        GSResult ret = gsFetch(mQuery, gsForUpdate, &rowSet);
+        GSResult ret = gsFetch(mQuery, gsForUpdate, &gsRowSet);
 
         // Check ret, if error, throw exception
-        if (ret != GS_RESULT_OK) {
+        if (!GS_SUCCEEDED(ret)) {
             throw GSException(mQuery, ret);
         }
 
-        return new RowSet(rowSet, mContainerInfo, mRow);
+        try {
+            RowSet* rowset = new RowSet(gsRowSet, mContainerInfo, mRow);
+            return rowset;
+        } catch (bad_alloc& ba) {
+            gsCloseRowSet(&gsRowSet);
+            throw GSException(mQuery, "Memory allocation error");
+        }
     }
+
     /**
-     * Get row set. Convert from C-Api: gsGetRowSet
+     * @brief Get row set.
+     * @return The pointer to a pointer variable to store GSRowSet instance
      */
     RowSet* Query::get_row_set() {
-        GSRowSet *rowSet;
-        GSResult ret = gsGetRowSet(mQuery, &rowSet);
+        GSRowSet *gsRowSet;
+        GSResult ret = gsGetRowSet(mQuery, &gsRowSet);
 
         // Check ret, if error, throw exception
-        if (ret != GS_RESULT_OK) {
+        if (!GS_SUCCEEDED(ret)) {
             throw GSException(mQuery, ret);
         }
 
-        return new RowSet(rowSet, mContainerInfo, mRow);
+        try {
+            RowSet* rowset = new RowSet(gsRowSet, mContainerInfo, mRow);
+            return rowset;
+        } catch (bad_alloc& ba) {
+            gsCloseRowSet(&gsRowSet);
+            throw GSException(mQuery, "Memory allocation error");
+        }
     }
 
     /**
-     * Get raw pointer of GSQuery
+     * @brief Get raw pointer of GSQuery
+     * @return A pointer store raw pointer of GSQuery
      */
     GSQuery* Query::gs_ptr() {
         return mQuery;
     }
+
     /**
-     * Set fetch limit option
+     * @brief Set fetch limit option for a result acquisition.
+     * @param limit The maximum number of Rows to be fetched.
+     * @param partial The option value for GSFetchOption
      */
     void Query::set_fetch_options(int limit, bool partial){
-        GSFetchOption fetchOption;
         GSResult ret;
-        if (limit >= 0) {
-            fetchOption = GS_FETCH_LIMIT;
-            ret = gsSetFetchOption(mQuery, fetchOption, &limit, GS_TYPE_INTEGER);
-            if (ret != GS_RESULT_OK) {
-                throw GSException(mQuery, ret);
-            }
+        ret = gsSetFetchOption(mQuery, GS_FETCH_LIMIT, &limit, GS_TYPE_INTEGER);
+        if (!GS_SUCCEEDED(ret)) {
+            throw GSException(mQuery, ret);
         }
-        if (partial == true) {
 #if GS_COMPATIBILITY_SUPPORT_4_0
-            fetchOption = GS_FETCH_PARTIAL_EXECUTION;
-            //Need to call gsSetFetchOption as many as the number of options
-            ret = gsSetFetchOption(mQuery, fetchOption, &partial, GS_TYPE_BOOL);
-            if (ret != GS_RESULT_OK) {
-                throw GSException(mQuery, ret);
-            }
-#endif
+        //Need to call gsSetFetchOption as many as the number of options
+        ret = gsSetFetchOption(mQuery, GS_FETCH_PARTIAL_EXECUTION, &partial, GS_TYPE_BOOL);
+        if (!GS_SUCCEEDED(ret)) {
+            throw GSException(mQuery, ret);
         }
+#endif
     }
 }
