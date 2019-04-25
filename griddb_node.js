@@ -1,4 +1,4 @@
-var griddb = require('./griddb_client');
+var griddb = require('griddb_client');
 var exports = module.exports;
 
 griddb['StoreFactory_'] = griddb.StoreFactory;
@@ -355,29 +355,11 @@ class Store {
      * <br> The target Container must have a Row key, and it must be the same type as the specified Type.
      * <br> The type of Row key that can be set must be the same type that is allowed by the individual Container type derived from Container.
      * </p>
-     * @type {Promise<RowKeyPredicate>}
-     * @param {Type} type - The type of Row key used as a matching condition.
-     * @returns {Promise<RowKeyPredicate>} RowKeyPredicate instance
-     */
-    createRowKeyPredicate(type) {
-        try {
-            return new RowKeyPredicate(this.store.createRowKeyPredicate(type));
-        } catch(err) {
-            throw(convertToGSException(err));
-        }
-    }
-
-    /**
-     * <p>
-     * Creates a matching condition with the specified Type as the type of Row key.
-     * <br> The target Container must have a Row key, and it must be the same type as the specified Type.
-     * <br> The type of Row key that can be set must be the same type that is allowed by the individual Container type derived from Container.
-     * </p>
      * @type {RowKeyPredicate}
      * @param {Type} type - The type of Row key used as a matching condition.
      * @returns {RowKeyPredicate} RowKeyPredicate instance
      */
-    createRowKeyPredicateSync(type) {
+    createRowKeyPredicate(type) {
         try {
             return new RowKeyPredicate(this.store.createRowKeyPredicate(type));
         } catch(err) {
@@ -487,22 +469,6 @@ class Container {
 
     /**
      * <p>
-     * Set type for Container
-     * </p>
-     * @type {void}
-     * @param {ContainerType} value - Type of Container
-     * @returns {void}
-     */
-    set type(value) {
-        try {
-            this.container.type = value;
-        } catch(err) {
-            throw(convertToGSException(err));
-        }
-    }
-
-    /**
-     * <p>
      * Set output type for row field timestamp.
      * <br> The default of output timestsamp is datatime.
      * </p>
@@ -525,20 +491,6 @@ class Container {
     get timestampOutput() {
         return this.container.timestampOutput;
     }
-    // Async functions
-    //query(strQuery) {
-    //    var this_ = this;
-    //    return new Promise(function(resolve, reject) {
-    //        setTimeout(function() {
-    //            try {
-    //                var query = this_.container.query(strQuery);
-    //                resolve(new Query(query));
-    //            } catch(err) {
-    //                reject(convertToGSException(err));
-    //            }
-    //        }, 0);
-    //    });
-    //}
 
     /**
      * <p>
@@ -953,14 +905,6 @@ class RowSet {
         return this.rowSet.size;
     }
 
-    set size(value) {
-        try {
-            this.rowSet.size = value;
-        } catch(err) {
-            throw(convertToGSException(err));
-        }
-    }
-
     /**
      * <p>
      * Get type of row set
@@ -970,14 +914,6 @@ class RowSet {
      */
     get type() {
         return this.rowSet.type;
-    }
-
-    set type(value) {
-        try {
-            this.rowSet.type = value;
-        } catch(err) {
-            throw(convertToGSException(err));
-        }
     }
 
     /**
@@ -1211,14 +1147,6 @@ class PartitionController {
         return this.partitionController.partitionCount;
     }
 
-    set partitionCount(count) {
-        try {
-            this.partitionController.partitionCount = count;
-        } catch(err) {
-            throw(convertToGSException(err));
-        }
-    }
-
     /**
      * <p>
      * Get the total number of containers belonging to a specified partition.
@@ -1348,21 +1276,6 @@ class RowKeyPredicate {
      */
     get keyType() {
         return this.rowKeyPredicate.keyType;
-    }
-
-    /**
-     * <p>
-     * Set type of RowkeyPredicate
-     * </p>
-     * @type {void}
-     * @param {number} value - Type of RowkeyPredicate
-     */
-    set keyType(value) {
-        try {
-            this.rowKeyPredicate.keyType = value;
-        } catch(err) {
-            throw(convertToGSException(err));
-        }
     }
 
     /**

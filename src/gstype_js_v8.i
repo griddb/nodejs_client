@@ -59,17 +59,15 @@
 %attribute(griddb::RowSet, GSRowSetType, type, type);
 //Read only attribute Store::partition_info 
 %attribute(griddb::Store, griddb::PartitionController*, partitionInfo, partition_info);
-
 //Read only attribute ContainerInfo::name 
 %attribute(griddb::ContainerInfo, GSChar*, name, get_name, set_name);
 //Read only attribute ContainerInfo::type 
 %attribute(griddb::ContainerInfo, GSContainerType, type, get_type, set_type);
 //Read only attribute ContainerInfo::rowKey 
 %attribute(griddb::ContainerInfo, bool, rowKey, get_row_key_assigned, set_row_key_assigned);
-//Read only attribute ContainerInfo::column_info_list 
+//Read only attribute ContainerInfo::columnInfoList 
 %attributeval(griddb::ContainerInfo, ColumnInfoList, columnInfoList, get_column_info_list, set_column_info_list);
 //Read only attribute ContainerInfo::expiration 
-//%attributeval(griddb::ContainerInfo, griddb::ExpirationInfo, expiration, get_expiration_info, set_expiration_info);
 %attribute(griddb::ContainerInfo, griddb::ExpirationInfo*, expiration, get_expiration_info, set_expiration_info);
 //Read only attribute ExpirationInfo::time 
 %attribute(griddb::ExpirationInfo, int, time, get_time, set_time);
@@ -462,7 +460,7 @@ static bool convertToRowKeyFieldWithType(griddb::Field &field, v8::Local<v8::Val
     }
 
     switch (type) {
-        case (GS_TYPE_STRING):
+        case GS_TYPE_STRING:
             if (!value->IsString()) {
                 return false;
             }
@@ -477,16 +475,16 @@ static bool convertToRowKeyFieldWithType(griddb::Field &field, v8::Local<v8::Val
                 field.value.asString = NULL;
             }
             break;
-        case (GS_TYPE_INTEGER):
+        case GS_TYPE_INTEGER:
             if (!value->IsInt32()) {
                 return false;
             }
             field.value.asInteger = value->IntegerValue();
             break;
-        case (GS_TYPE_LONG):
+        case GS_TYPE_LONG:
             return convertObjectToLong(value, &field.value.asLong);
             break;
-        case (GS_TYPE_TIMESTAMP):
+        case GS_TYPE_TIMESTAMP:
             return convertObjectToGSTimestamp(value, &field.value.asTimestamp);
             break;
         default:
@@ -579,7 +577,7 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
             }
             ret = gsSetRowFieldByInteger(row, column, value->IntegerValue());
             break;
-        case (GS_TYPE_FLOAT): {
+        case GS_TYPE_FLOAT: {
             float floatVal;
             vbool = convertObjectToFloat(value, &floatVal);
             if (!vbool) {
@@ -2001,7 +1999,7 @@ static void freeargContainerMultiPut(GSRow** listRowdata, int rowCount) {
         $result = SWIGV8_NULL();
     } else {
         switch (typeTmp$argnum) {
-            case (GS_ROW_SET_CONTAINER_ROWS): {
+            case GS_ROW_SET_CONTAINER_ROWS: {
                 bool retVal;
                 int errorColumn;
                 GSType errorType;
@@ -2021,10 +2019,10 @@ static void freeargContainerMultiPut(GSRow** listRowdata, int rowCount) {
                 $result = obj;
                 break;
             }
-            case (GS_ROW_SET_AGGREGATION_RESULT):
+            case GS_ROW_SET_AGGREGATION_RESULT:
                 $result = SWIG_V8_NewPointerObj((void *)aggResultTmp$argnum, $descriptor(griddb::AggregationResult *), SWIG_POINTER_OWN);
                 break;
-            case (GS_ROW_SET_QUERY_ANALYSIS):
+            case GS_ROW_SET_QUERY_ANALYSIS:
                 $result = SWIG_V8_NewPointerObj((void *)queryAnalysisTmp$argnum, $descriptor(griddb::QueryAnalysisEntry *), SWIG_POINTER_OWN);
                 break;
             default:
@@ -2131,7 +2129,6 @@ static void freeargColumnInfoList(ColumnInfoList* infoList, int* alloc) {
     if (infoList->columnInfo) {
         if (alloc) {
             for (int i = 0; i < len; i++) {
-                //cleanString(infoList->columnInfo[i].name, alloc[i]);
                 free((void*)infoList->columnInfo[i].name);
             }
             delete[] alloc;
@@ -2267,7 +2264,6 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
     $2 = false;
     int allocKey;
     char errorMsg[60];
-    bool boolVal, vbool;
     if (len > 0) {
         for (int i = 0; i < len; i++) {
             res = SWIG_AsCharPtrAndSize(keys->Get(i), &name, &size, &allocKey);
@@ -2326,7 +2322,6 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
     v8::Local<v8::Array> colInfo;
     bool boolVal, vbool;
     griddb::ExpirationInfo* expiration;
-    GSChar *nameStr;
     if (len > 0) {
         for (int i = 0; i < len; i++) {
             res = SWIG_AsCharPtrAndSize(keys->Get(i), &name, &size, &allocKey);
