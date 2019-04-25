@@ -12,7 +12,7 @@ Building of the library and execution of the sample programs have been checked i
     SWIG:            3.0.12
     GCC:             4.8.2
     Node.js:         6
-    GridDB Server and C Client:   4.0 CE / 3.0 CE
+    GridDB Server and C Client:   4.1 CE
 
 ## QuickStart
 ### Preparations
@@ -100,8 +100,7 @@ Please refer to the following files for more detailed information.
 
 Note:
 1. The current API might be changed in the next version. e.g. ContainerInfo()
-2. When you use GridDB V3.0 CE, please replace gridstore.h with gridstoreForV3.0.h on include/ folder and build sources.
-3. There is [Package for 0.7.1 on npm](https://www.npmjs.com/package/griddb_node) .
+2. There is [Package for 0.7.1 on npm](https://www.npmjs.com/package/griddb_node) .
 
 ## Community
 
