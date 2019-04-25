@@ -2094,7 +2094,7 @@ static void freeargContainerMultiPut(GSRow** listRowdata, int rowCount) {
                 SWIG_fail;
             }
 
-            containerInfo[i].name = strdup(v);
+            griddb::Util::strdup((const GSChar**)&(containerInfo[i].name), v);
             cleanString(v, alloc[i]);
             containerInfo[i].type = value->Uint32Value();
 
