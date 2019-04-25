@@ -45,7 +45,6 @@ class RowSetType {
 class FetchOption {
     public:
         static const int LIMIT = 0;
-#if GS_COMPATIBILITY_SUPPORT_1_5
 
 #if GS_INTERNAL_DEFINITION_VISIBLE
 #if !GS_COMPATIBILITY_DEPRECATE_FETCH_OPTION_SIZE
@@ -55,8 +54,6 @@ class FetchOption {
 
 #if GS_COMPATIBILITY_SUPPORT_4_0
         static const int PARTIAL_EXECUTION = (LIMIT + 2);
-#endif
-
 #endif
 };
 // Represents the time unit(s) used in TimeSeries data operation.
@@ -93,10 +90,9 @@ class Type {
         static const int FLOAT_ARRAY = 17;
         static const int DOUBLE_ARRAY = 18;
         static const int TIMESTAMP_ARRAY = 19;
-#if GS_COMPATIBILITY_SUPPORT_3_5
-    // Can't use NULL because it is keyword of C language
+
+        // Can't use NULL because it is keyword of C language
         static const int NULL_TYPE = -1;
-#endif
 };
 // Sum of bits of value of the flag indicating the option setting for Column.
 class TypeOption {

@@ -14,33 +14,21 @@
     limitations under the License.
 */
 
-#ifndef SRC_QUERYANALYSISENTRY_H_
-#define SRC_QUERYANALYSISENTRY_H_
+#ifndef _UTIL_H_
+#define _UTIL_H_
 
-#include <stdio.h>
 #include <string.h>
-
-#include "gridstore.h"
 #include "GSException.h"
-#include "Util.h"
 
 using namespace std;
 
 namespace griddb {
 
-class QueryAnalysisEntry {
-    private:
-        GSQueryAnalysisEntry* mQueryAnalysis;
-        void freeMemory();
-
+class Util {
     public:
-        QueryAnalysisEntry(GSQueryAnalysisEntry* queryAnalysis);
-        ~QueryAnalysisEntry();
-        void close();
-        void get(GSQueryAnalysisEntry* queryAnalysis);
-
+        static void strdup(const GSChar** const to, const GSChar* from);
 };
 
 }
-#endif /* SRC_QUERYANALYSISENTRY_H_ */
 
+#endif

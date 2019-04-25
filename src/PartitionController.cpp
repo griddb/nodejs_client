@@ -18,49 +18,69 @@
 
 namespace griddb {
 
+    /**
+     * @brief Constructor a new PartitionController::PartitionController object
+     * @param *controller A pointer for acquiring and processing the partition status
+     */
     PartitionController::PartitionController(GSPartitionController *controller) :
         mController(controller) {
     }
+
     /**
-     * Destructor. Convert from C-API:gsClosePartitionController
+     * @brief Destructor to free resources for a PartitionController object
      */
     PartitionController::~PartitionController() {
         close();
     }
+
+    /**
+     * @brief Release PartitionController resource
+     */
     void PartitionController::close() {
         if (mController != NULL) {
             gsClosePartitionController(&mController);
             mController = NULL;
         }
     }
+
     /**
-     * Get partition count. Convert from C-Api: gsGetPartitionCount
+     * @brief Get partition count
+     * @return The number of partitions in the target GridDB cluster
      */
     int32_t PartitionController::get_partition_count() {
         int32_t value;
         GSResult ret = gsGetPartitionCount(mController, &value);
 
         // Check ret, if error, throw exception
-        if (ret != GS_RESULT_OK) {
+        if (!GS_SUCCEEDED(ret)) {
             throw GSException(mController, ret);
         }
         return value;
     }
+
     /**
-     * Get container partition count. Convert from C-Api: gsGetPartitionContainerCount
+     * @brief Get container partition count
+     * @param partition_index The partition index, from 0 to the number of partitions minus one
+     * @return The number of Container
      */
     int64_t PartitionController::get_container_count(int32_t partition_index) {
         int64_t value;
         GSResult ret = gsGetPartitionContainerCount(mController, partition_index, &value);
 
         // Check ret, if error, throw exception
-        if (ret != GS_RESULT_OK) {
+        if (!GS_SUCCEEDED(ret)) {
             throw GSException(mController, ret);
         }
         return value;
     }
+
     /**
-     * Get list partition container names case there is limit. Convert from C-Api: gsGetPartitionContainerNames
+     * @brief Get a list of the Container names belonging to a specified partition.
+     * @param partition_index The partition index, from 0 to the number of partitions minus one
+     * @param start The start position of the acquisition range. A value must be greater than or equal to 0
+     * @param ***stringList The pointer to a pointer variable to store the array list of Container name
+     * @param *size The pointer to a variable to store the number of array elements of the Container name list
+     * @param limit The upper limit of the number of cases acquired
      */
     void PartitionController::get_container_names(int32_t partition_index, int64_t start,
             const GSChar * const ** stringList, size_t *size, int64_t limit) {
@@ -72,20 +92,22 @@ namespace griddb {
         }
         GSResult ret = gsGetPartitionContainerNames(mController, partition_index, start, limitPtr, stringList, size);
 
-        if (ret != GS_RESULT_OK) {
+        if (!GS_SUCCEEDED(ret)) {
             throw GSException(mController, ret);
         }
     }
 
     /**
-     * Get get_partition index of container. Convert from C-Api: gsGetPartitionIndexOfContainer
+     * @brief Get the partition index corresponding to the specified Container name.
+     * @param *container_name Container name
+     * @return The partition index
      */
     int32_t PartitionController::get_partition_index_of_container(const GSChar* container_name) {
         int32_t value;
         GSResult ret = gsGetPartitionIndexOfContainer(mController, container_name, &value);
 
         // Check ret, if error, throw exception
-        if (ret != GS_RESULT_OK) {
+        if (!GS_SUCCEEDED(ret)) {
             throw GSException(mController, ret);
         }
         return value;

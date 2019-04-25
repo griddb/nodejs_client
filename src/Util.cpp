@@ -14,33 +14,18 @@
     limitations under the License.
 */
 
-#ifndef SRC_QUERYANALYSISENTRY_H_
-#define SRC_QUERYANALYSISENTRY_H_
-
-#include <stdio.h>
-#include <string.h>
-
-#include "gridstore.h"
-#include "GSException.h"
 #include "Util.h"
-
-using namespace std;
 
 namespace griddb {
 
-class QueryAnalysisEntry {
-    private:
-        GSQueryAnalysisEntry* mQueryAnalysis;
-        void freeMemory();
-
-    public:
-        QueryAnalysisEntry(GSQueryAnalysisEntry* queryAnalysis);
-        ~QueryAnalysisEntry();
-        void close();
-        void get(GSQueryAnalysisEntry* queryAnalysis);
-
-};
-
+    /**
+     * @brief Allocate new memory and setup string data from source string data for the new memory
+     * @param **to A pointer variable that refers to new string data
+     * @param *from A pointer stores source string data
+     */
+    void Util::strdup(const GSChar** const to, const GSChar* from) {
+        GSChar* temp = new char[strlen(from) + 1]();
+        strcpy(temp, from);
+        *to = temp;
+    }
 }
-#endif /* SRC_QUERYANALYSISENTRY_H_ */
-

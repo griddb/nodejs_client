@@ -20,9 +20,12 @@
 #include <string>
 #include <cstring>
 #include <utility>
+#include <assert.h>
+
 #include "TimeSeriesProperties.h"
 #include "ExpirationInfo.h"
 #include "GSException.h"
+#include "Util.h"
 
 //Support column_info_list attribute
 struct ColumnInfoList {

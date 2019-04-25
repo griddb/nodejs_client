@@ -17,6 +17,8 @@
 #ifndef _AGGREGATIONRESULT_H_
 #define _AGGREGATIONRESULT_H_
 
+#include <assert.h>
+
 #include "GSException.h"
 #include "Field.h"
 #include "gridstore.h"
@@ -35,7 +37,6 @@ class AggregationResult {
         bool timestamp_output_with_float;
         ~AggregationResult();
         void close();
-
         void get(GSType type, griddb::Field *agValue);
         AggregationResult(GSAggregationResult* aggResult);
 

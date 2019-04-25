@@ -18,6 +18,10 @@
 
 namespace griddb {
 
+    /**
+     * @brief Constructor a new Aggregation Result:: Aggregation Result object
+     * @param aggResult Stores the result of an aggregation operation
+     */
     AggregationResult::AggregationResult(GSAggregationResult* aggResult) :
             mAggResult(aggResult), timestamp_output_with_float(false) {
     }
@@ -27,7 +31,7 @@ namespace griddb {
     }
 
     /**
-     * Release AggregationResult resource
+     * @brief Release AggregationResult resource
      */
     void AggregationResult::close() {
         if (mAggResult != NULL) {
@@ -37,9 +41,12 @@ namespace griddb {
     }
 
     /**
-     * Obtains the result of aggregating numeric-type values.
+     * @brief Obtains the result of aggregating numeric-type values.
+     * @param type Column type
+     * @param *agValue aggregation result
      */
     void AggregationResult::get(GSType type, griddb::Field *agValue) {
+        assert(agValue != NULL);
         void *value;
         agValue->type = type;
         switch (type) {
@@ -62,4 +69,5 @@ namespace griddb {
                     "Value cannot be retrieved from Aggregation result");
         }
     }
+
 } /* namespace griddb */

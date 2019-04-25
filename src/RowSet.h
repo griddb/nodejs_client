@@ -21,12 +21,14 @@
 #include <string>
 #include <stdio.h>
 #include <time.h>
+#include <assert.h>
 
 #include "gridstore.h"
 #include "Field.h"
 #include "AggregationResult.h"
 #include "QueryAnalysisEntry.h"
 #include "GSException.h"
+#include "Util.h"
 
 using namespace std;
 

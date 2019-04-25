@@ -24,6 +24,7 @@
 #include "gridstore.h"
 #include "Store.h"
 #include "GSException.h"
+#include "Util.h"
 
 using namespace std;
 
@@ -44,7 +45,6 @@ class StoreFactory {
         Store* get_store(const char* host=NULL, int32_t port=0, const char* cluster_name=NULL,
                 const char* database=NULL, const char* username=NULL, const char* password=NULL,
                 const char* notification_member=NULL, const char* notification_provider=NULL);
-        void set_properties(const GSPropertyEntry* props, int propsCount);
         string get_version();
 
     private:
