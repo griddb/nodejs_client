@@ -8,10 +8,10 @@ GridDB Node.JS Client is developed using GridDB C Client and [SWIG](http://www.s
 
 Building of the library and execution of the sample programs have been checked in the following environment.
 
-    OS:              CentOS 6.9(x64)
-    SWIG:            3.0.12
-    GCC:             4.8.2
-    Node.js:         6
+    OS:              CentOS 7.6(x64)
+    SWIG:            4.0.0
+    GCC:             4.8.5
+    Node.js:         v8/v10
     GridDB Server and C Client:   4.1 CE
 
 ## QuickStart
@@ -26,29 +26,16 @@ Install SWIG as below.
     $ make
     $ make install
 
-    $ wget https://prdownloads.sourceforge.net/swig/swig-3.0.12.tar.gz
-    $ tar xvfz swig-3.0.12.tar.gz
-    $ cd swig-3.0.12
+    $ wget https://prdownloads.sourceforge.net/swig/swig-4.0.0.tar.gz
+    $ tar xvfz swig-4.0.0.tar.gz
+    $ cd swig-4.0.0
     $ ./configure
     $ make
     $ make install
 
-Install Node.js v6.
+Install Node.js(v8 or v10) and GridDB C Client.
 
 If required, change INCLUDES_JS path in Makefile.
-
-Install gcc 4.8 as below.
-
-    1. Use python version 2:
-        $ pyenv global 2.7.8
-        $ pyenv rehash
-    2. Install devtoolset-2:
-        $ wget http://people.centos.org/tru/devtools-2/devtools-2.repo -O /etc/yum.repos.d/devtools-2.repo
-        $ yum install devtoolset-2-gcc devtoolset-2-binutils
-        $ yum install devtoolset-2-gcc-c++ devtoolset-2-gcc-gfortran
-    3. Enable devtoolset-2:
-        scl enable devtoolset-2 bash
-        source /opt/rh/devtoolset-2/enable
 
 Set LIBRARY_PATH. 
 
