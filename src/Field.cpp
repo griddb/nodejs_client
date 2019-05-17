@@ -35,7 +35,7 @@ namespace griddb {
             break;
         case GS_TYPE_BLOB:
             if (value.asBlob.data) {
-                delete [] value.asBlob.data;
+            	delete [] (char*)value.asBlob.data;
                 value.asBlob.data = NULL;
             }
             break;
