@@ -349,7 +349,7 @@ static bool isInt64(double x) {
 %fragment("convertObjectToLong", "header", fragment = "isInt64") {
 static bool convertObjectToLong(v8::Local<v8::Value> value, int64_t* longVal) {
     int checkConvert = 0;
-    if (isInt64(value->NumberValue())) {
+    if (isInt64(value->NumberValue(Nan::GetCurrentContext()).FromJust())) {
         //input can be integer
         checkConvert = SWIG_AsVal_long(value, longVal);
         if (!SWIG_IsOK(checkConvert)) {
@@ -373,7 +373,7 @@ static bool convertObjectToDouble(v8::Local<v8::Value> value, double* floatValPt
     if (!(value->IsNumber())) {
         return false;
     }
-    *floatValPtr = value->NumberValue();
+    *floatValPtr = value->NumberValue(Nan::GetCurrentContext()).FromJust();
     return true;
 }
 }
@@ -386,7 +386,7 @@ static bool convertObjectToFloat(v8::Local<v8::Value> value, float* floatValPtr)
     if (!(value->IsNumber())) {
         return false;
     }
-    *floatValPtr = value->NumberValue();
+    *floatValPtr = value->NumberValue(Nan::GetCurrentContext()).FromJust();
 
     return (*floatValPtr <= std::numeric_limits<float>::max() &&
             *floatValPtr >= -1 *std::numeric_limits<float>::max());
@@ -411,7 +411,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
     float floatTimestamp;
     double utcTimestamp;
     if (value->IsDate()) {
-        *timestamp = value->NumberValue();
+        *timestamp = value->NumberValue(Nan::GetCurrentContext()).FromJust();
         return true;
     } else if (value->IsString()) {
 
@@ -426,7 +426,7 @@ static bool convertObjectToGSTimestamp(v8::Local<v8::Value> value, GSTimestamp* 
         cleanString(v, alloc);
         return (retConvertTimestamp == GS_TRUE);
     } else if (value->IsNumber()) {
-        *timestamp = value->NumberValue();
+        *timestamp = value->NumberValue(Nan::GetCurrentContext()).FromJust();
         if (*timestamp > (UTC_TIMESTAMP_MAX * 1000)) { //miliseconds
             return false;
         }
@@ -479,7 +479,7 @@ static bool convertToRowKeyFieldWithType(griddb::Field &field, v8::Local<v8::Val
             if (!value->IsInt32()) {
                 return false;
             }
-            field.value.asInteger = value->IntegerValue();
+            field.value.asInteger = value->IntegerValue(Nan::GetCurrentContext()).FromJust();
             break;
         case GS_TYPE_LONG:
             return convertObjectToLong(value, &field.value.asLong);
@@ -554,28 +554,31 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
             if (!value->IsInt32()) {
                 return false;
             }
-            if (value->IntegerValue() < std::numeric_limits<int8_t>::min() || value->IntegerValue() > std::numeric_limits<int8_t>::max()) {
+            int64_t tmpInt = value->IntegerValue(Nan::GetCurrentContext()).FromJust();
+            if (tmpInt < std::numeric_limits<int8_t>::min() || 
+                    tmpInt > std::numeric_limits<int8_t>::max()) {
                 return false;
             }
-            ret = gsSetRowFieldByByte(row, column, value->IntegerValue());
+            ret = gsSetRowFieldByByte(row, column, tmpInt);
             break;
         }
-        case GS_TYPE_SHORT:
+        case GS_TYPE_SHORT: {
             if (!value->IsInt32()) {
                 return false;
             }
-            if (value->IntegerValue() < std::numeric_limits<int16_t>::min() || 
-                    value->IntegerValue() > std::numeric_limits<int16_t>::max()) {
+            int64_t tmpInt = value->IntegerValue(Nan::GetCurrentContext()).FromJust();
+            if (tmpInt < std::numeric_limits<int16_t>::min() ||
+                    tmpInt > std::numeric_limits<int16_t>::max()) {
                 return false;
             }
-            ret = gsSetRowFieldByShort(row, column, value->IntegerValue());
+            ret = gsSetRowFieldByShort(row, column, tmpInt);
             break;
-
+        }
         case GS_TYPE_INTEGER:
             if (!value->IsInt32()) {
                 return false;
             }
-            ret = gsSetRowFieldByInteger(row, column, value->IntegerValue());
+            ret = gsSetRowFieldByInteger(row, column, value->IntegerValue(Nan::GetCurrentContext()).FromJust());
             break;
         case GS_TYPE_FLOAT: {
             float floatVal;
@@ -872,7 +875,7 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
         SWIG_V8_Raise("Expected object property as input");
         SWIG_fail;
     }
-    obj = $input->ToObject();
+    obj = $input->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
     keys = obj->GetOwnPropertyNames();
     int len = (int) keys->Length();
     char* name = 0;
@@ -903,7 +906,7 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
             if (strcmp(name, "port") == 0) {
                 //Input valid is number only
                 if (obj->Get(keys->Get(i))->IsInt32()) {
-                    $2 = obj->Get(keys->Get(i))->IntegerValue();
+                    $2 = obj->Get(keys->Get(i))->IntegerValue(Nan::GetCurrentContext()).FromJust();
                 } else {
                     cleanString(name, alloc[j]);
                     freeargGetStore($1, $3, $4, $5, $6, $7, $8, alloc);
@@ -1449,7 +1452,7 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
     $2 = NULL;
     $3 = NULL;
     $4 = 0;
-    obj = $input->ToObject();
+    obj = $input->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
     keys = obj->GetOwnPropertyNames();
     $4 = (size_t) keys->Length();
     griddb::Container* tmpContainer;
@@ -1624,7 +1627,7 @@ static void freeargStoreMultiPut(GSRow*** listRow, const int *listRowContainerCo
         SWIG_V8_Raise("Expected object property as input");
         SWIG_fail;
     }
-    obj = $input->ToObject();
+    obj = $input->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
     keys = obj->GetOwnPropertyNames();
     $1 = NULL;
     $2 = (int) keys->Length();
@@ -2094,7 +2097,8 @@ static void freeargContainerMultiPut(GSRow** listRowdata, int rowCount) {
 
             griddb::Util::strdup((const GSChar**)&(containerInfo[i].name), v);
             cleanString(v, alloc[i]);
-            containerInfo[i].type = value->Uint32Value();
+            v8::Local<v8::Context> context = Nan::GetCurrentContext();
+            containerInfo[i].type = value->Uint32Value(context).FromJust();
 
             if (colInfo->Length() == 3) {
                 v8::Local<v8::Value> options = colInfo->Get(2);
@@ -2105,7 +2109,7 @@ static void freeargContainerMultiPut(GSRow** listRowdata, int rowCount) {
                     SWIG_fail;
                 }
 
-                containerInfo[i].options = options->Uint32Value();
+                containerInfo[i].options = options->Uint32Value(context).FromJust();
             }
 
             if (colInfo->Length() > 3) {
@@ -2171,7 +2175,8 @@ static void freeargColumnInfoList(ColumnInfoList* infoList, int* alloc) {
         SWIG_V8_Raise("Expected object property as input");
         SWIG_fail;
     }
-    obj = $input->ToObject();
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
+    obj = $input->ToObject(context).ToLocalChecked();
     keys = obj->GetOwnPropertyNames();
     int len = (int) keys->Length();
     //Create $1, $2, $3 with default value
@@ -2217,7 +2222,7 @@ static void freeargColumnInfoList(ColumnInfoList* infoList, int* alloc) {
                     SWIG_V8_Raise(errorMsg);
                     SWIG_fail;
                 }
-                $2 = obj->Get(keys->Get(i))->IntegerValue();
+                $2 = obj->Get(keys->Get(i))->IntegerValue(context).FromJust();
             } else {
                 sprintf(errorMsg, "Invalid property %s", name);
                 cleanString(name, allocKey);
@@ -2256,7 +2261,8 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
         SWIG_V8_Raise("Expected object property as input");
         SWIG_fail;
     }
-    obj = $input->ToObject();
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
+    obj = $input->ToObject(context).ToLocalChecked();
     keys = obj->GetOwnPropertyNames();
     int len = (int) keys->Length();
     //Create $1, $2 with default value
@@ -2277,7 +2283,7 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
                     SWIG_V8_Raise(errorMsg);
                     SWIG_fail;
                 }
-                $1 = obj->Get(keys->Get(i))->IntegerValue();
+                $1 = obj->Get(keys->Get(i))->IntegerValue(context).FromJust();
             } else if (strcmp(name, "partial") == 0) {
                 cleanString(name, allocKey);
                 //Throw error when parse partial parameter
@@ -2305,7 +2311,7 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
         SWIG_V8_Raise("Expected object property as input");
         SWIG_fail;
     }
-    obj = $input->ToObject();
+    obj = $input->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
     keys = obj->GetOwnPropertyNames();
     int len = (int) keys->Length();
     //Create $1, $2, $3, $3, $4, $5, $6 with default value
@@ -2322,6 +2328,7 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
     v8::Local<v8::Array> colInfo;
     bool boolVal, vbool;
     griddb::ExpirationInfo* expiration;
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     if (len > 0) {
         for (int i = 0; i < len; i++) {
             res = SWIG_AsCharPtrAndSize(keys->Get(i), &name, &size, &allocKey);
@@ -2409,7 +2416,7 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
                                 SWIG_fail;
                             }
                             $2[j].name = v;
-                            $2[j].type = (int) colInfo->Get(1)->Uint32Value();
+                            $2[j].type = (int) colInfo->Get(1)->Uint32Value(context).FromJust();
 
                             if ((int)colInfo->Length() == 3) {
                                 v8::Local<v8::Value> options = colInfo->Get(2);
@@ -2419,7 +2426,7 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
                                     SWIG_V8_Raise("Expected Integer as type of Column options");
                                     SWIG_fail;
                                 }
-                                $2[j].options = (int) options->Uint32Value();
+                                $2[j].options = (int) options->Uint32Value(context).FromJust();
                             }
                         }
                     }
@@ -2431,7 +2438,7 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
                     cleanString(name, allocKey);
                     SWIG_fail;
                 }
-                $4 = obj->Get(keys->Get(i))->IntegerValue();
+                $4 = obj->Get(keys->Get(i))->IntegerValue(context).FromJust();
             } else if (strcmp(name, "rowKey") == 0) {
                 vbool = convertObjectToBool(obj->Get(keys->Get(i)), &boolVal);
                 if (!vbool) {
@@ -2521,7 +2528,7 @@ static bool convertObjectToInt(v8::Local<v8::Value> value, int* intValPtr) {
     if (!value->IsInt32()) {
         return false;
     }
-    *intValPtr = value->IntegerValue();
+    *intValPtr = value->IntegerValue(Nan::GetCurrentContext()).FromJust();
     return true;
 }
 }
@@ -2545,7 +2552,7 @@ static bool convertObjectToSizeT(v8::Local<v8::Value> value, size_t* intValPtr) 
     if (!SWIG_IsOK(checkConvert)) {
         return false;
     }
-    if (value->NumberValue() != *intValPtr) {
+    if (value->NumberValue(Nan::GetCurrentContext()).FromJust() != *intValPtr) {
         return false;
     }
     return true;
