@@ -87,7 +87,7 @@ Please refer to the following files for more detailed information.
 
 Note:
 1. The current API might be changed in the next version. e.g. ContainerInfo()
-2. There is [Package for 0.7.1 on npm](https://www.npmjs.com/package/griddb_node) .
+2. There is [Package for 0.8.4 on npm](https://www.npmjs.com/package/griddb_node) .
 
 ## Community
 
