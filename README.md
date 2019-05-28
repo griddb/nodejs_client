@@ -64,7 +64,7 @@ GridDB Server need to be started in advance.
 
     2. The command to run sample
 
-        $ node sample/sample.js <GridDB notification address> <GridDB notification port>
+        $ node sample/sample1.js <GridDB notification address> <GridDB notification port>
             <GridDB cluster name> <GridDB user> <GridDB password>
           -->[ 'name01', false, 1, <Buffer 41 42 43 44 45 46 47 48 49 4a> ]
 
