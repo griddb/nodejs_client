@@ -1,4 +1,4 @@
-var griddb = require('griddb_client');
+var griddb = require('./griddb_client');
 var exports = module.exports;
 
 griddb['StoreFactory_'] = griddb.StoreFactory;
