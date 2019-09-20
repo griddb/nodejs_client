@@ -351,10 +351,10 @@ static bool convertObjectToLong(v8::Local<v8::Value> value, int64_t* longVal) {
     int checkConvert = 0;
     if (isInt64(value->NumberValue(Nan::GetCurrentContext()).FromJust())) {
         //input can be integer
-        checkConvert = SWIG_AsVal_long(value, longVal);
-        if (!SWIG_IsOK(checkConvert)) {
+        if (!(value->IsNumber())) {
             return false;
         }
+        *longVal = SWIGV8_INTEGER_VALUE(value);
         //When input value is integer, it should be between -9007199254740992(-2^53)/9007199254740992(2^53).
         return (-9007199254740992 <= *longVal && 9007199254740992 >= *longVal);
     } else {
