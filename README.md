@@ -166,7 +166,7 @@ Please refer to the following files for more detailed information.
 
 Note:
 1. The current API might be changed in the next version. e.g. ContainerInfo()
-2. There is [Node.JS Client (0.8.4) Package for CentOS on npm](https://www.npmjs.com/package/griddb_node) .
+2. There is [Node.JS Client (0.8.4) Package for CentOS and Ubuntu on npm](https://www.npmjs.com/package/griddb_node) .
 3. Cmake-js only support node v8
 
 ## Community
