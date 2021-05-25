@@ -9,41 +9,41 @@ GridDB Node.JS Client is developed using GridDB C Client and [SWIG](http://www.s
 Building of the library and execution of the sample programs have been checked in the following environment.
 
     OS: CentOS 7.6(x64) (GCC 4.8.5)
-    SWIG: 4.0.0
-    Node.js: v8/v10
-    GridDB C client: V4.2 CE(Community Edition)
-    GridDB server: V4.2 CE, CentOS 7.6(x64) (GCC 4.8.5)
+    SWIG:  The development (master) version (commit ID 113d78a083aa897ffdca4ff6bd9b42e630d16d27(2020/4/7))
+    Node.js: v12
+    GridDB C client: V4.6 CE(Community Edition)
+    GridDB server: V4.6 CE, CentOS 7.9 (GCC 4.8.5)
 
-    OS: Ubuntu 18.04(x64) (gcc 7.3.0)
-    SWIG: 4.0.0
-    Node.js: v8/v10
-    GridDB C client: V4.2 CE (Note: If you build from source code, please use GCC 4.8.5.)
-    GridDB server: V4.2 CE, Ubuntu 18.04(x64) (Note: If you build from source code, please use GCC 4.8.5.)
+    OS: Ubuntu 20.04(x64) (gcc 10.2.0)
+    SWIG:  The development (master) version (commit ID 113d78a083aa897ffdca4ff6bd9b42e630d16d27(2020/4/7))
+    Node.js: v12
+    GridDB C client: V4.6 CE(Community Edition)
+    GridDB server: V4.6 CE, CentOS 7.9 (GCC 4.8.5)
     
     OS: Windows 10(x64) (VS2017)
-    SWIG: 4.0.0
-    Node.js: v8
-    GridDB C client: V4.2 CE
-    GridDB server: V4.2 CE, CentOS 7.6(x64) (GCC 4.8.5)
+    SWIG:  The development (master) version (commit ID 27f29aef2cf00735172c28d331536d0069b0f1f4(2021/3/2))
+    Node.js: v12
+    GridDB C client: V4.6 CE(Community Edition)
+    GridDB server: V4.6 CE, CentOS 7.9 (GCC 4.8.5)
+
+Note: We can build and run Node.JS Client with SWIG 4.0.2 for Node.js v10.
 
 ## QuickStart (CentOS, Ubuntu)
 ### Preparations
 
-Install SWIG as below.
+Install SWIG:
+- Checkout SWIG with the upper commit ID at https://github.com/swig/swig
+- Run commands below in command line at SWIG folder:
+```
+    ./autogen.sh
+    ./configure
+    make
+    sudo make install
+```
 
-    $ wget https://prdownloads.sourceforge.net/swig/swig-4.0.0.tar.gz
-    $ tar xvfz swig-4.0.0.tar.gz
-    $ cd swig-4.0.0
-    $ ./configure
-    $ make
-    $ sudo make install
-   
-    Note: If CentOS, you might need to install pcre in advance.
-    $ sudo yum install pcre2-devel.x86_64
+Install [GridDB Server](https://github.com/griddb/griddb) and [C Client](https://github.com/griddb/c_client). (Note: If you build them from source code, please use GCC 4.8.5.) 
 
-Install [GridDB Server](https://github.com/griddb/griddb_nosql) and [C Client](https://github.com/griddb/c_client). (Note: If you build them from source code, please use GCC 4.8.5.) 
-
-Install Node.js(v8 or v10).
+Install Node.js(v12).
 
 If required, change INCLUDES_JS path in Makefile.
 
@@ -81,17 +81,40 @@ GridDB Server need to be started in advance.
 ## QuickStart (Windows)
 ### Preparations
 
+Install CMake
+- Download and install package from https://github.com/Kitware/CMake/releases/download/v3.15.2/cmake-3.15.2-win64-x64.msi
+
+Install Nuget
+- Download and install package from https://www.nuget.org/downloads (installed to C:\Tools)
+
+Install Bison using the following command:
+
+    C:\Tools\nuget install bison-win32 -Version 2.4.1.1 -OutputDirectory C:\Tools\bison
+
+Install PCRE using Nuget using the following command:
+
+    C:\Tools\nuget install pcre -Version 8.33.0.1 -OutputDirectory C:\Tools\pcre
+
 Install SWIG as below.
-- Download zip package from http://prdownloads.sourceforge.net/swig/swigwin-4.0.0.zip
-- Extract the zip package then set path for SWIG_RESOURCE in CmakeList.txt.
+- Checkout SWIG with the upper commit ID at https://github.com/swig/swig
+- Run commands below in cmd at SWIG folder:
 ```
-set(SWIG_RESOURCE C:/Users/User/Downloads/swigwin-4.0.0)
+    SET PATH=D:\Projects\bison\bison-win32.2.4.1.1\tools\native\bin;%PATH%
+    SET PCRE_ROOT=D:\Projects\pcre\pcre.8.33.0.1\build\native
+    SET PCRE_PLATFORM=x64
+    cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_INSTALL_PREFIX="%CD:\=/%/install2" -DCMAKE_C_FLAGS="/DPCRE_STATIC /MT" -DCMAKE_CXX_FLAGS="/DPCRE_STATIC /MT"  -DPCRE_INCLUDE_DIR=%PCRE_ROOT%/include -DPCRE_LIBRARY=%PCRE_ROOT%/lib/v110/%PCRE_PLATFORM%/Release/static/utf8/pcre8.lib .
+    cmake --build . --config Release
 ```
 
-Install Node.js(v8)
-- Download and install package from https://nodejs.org/dist/latest-v8.x/node-v8.16.1-x64.msi
+- Set path for SWIG_RESOURCE in CmakeList.txt.
+```
+set(SWIG_RESOURCE /PATH/TO/SWIG/FOLDER)
+```
 
-Install [GridDB Server](https://github.com/griddb/griddb_nosql) on CentOS. (Note: If you build them from source code, please use GCC 4.8.5.) 
+Install Node.js(v12)
+- Download and install package from https://nodejs.org/dist/v12.13.0/node-v12.13.0-x64.msi
+
+Install [GridDB Server](https://github.com/griddb/griddb) on CentOS. (Note: If you build them from source code, please use GCC 4.8.5.) 
 
 Install GridDB C Client.
 - Please refer to https://github.com/griddb/c_client to install GridDB C client.
@@ -100,12 +123,11 @@ Install GridDB C Client.
     set(C_LIB C:/Users/User/Downloads/griddb_c_lib)
 ```
 
-Install CMake
-- Download and install package from https://github.com/Kitware/CMake/releases/download/v3.15.2/cmake-3.15.2-win64-x64.msi
-
 Install Cmake-js
 - Use command line:
-npm install cmake-js
+```
+    npm install cmake-js
+```
 
 ### Build and Run in cmd
 
@@ -167,7 +189,6 @@ Please refer to the following files for more detailed information.
 Note:
 1. The current API might be changed in the next version. e.g. ContainerInfo()
 2. There is [Node.JS Client (0.8.4) Package for CentOS and Ubuntu on npm](https://www.npmjs.com/package/griddb_node) .
-3. Cmake-js only support node v8
 
 ## Community
 
