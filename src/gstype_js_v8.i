@@ -89,6 +89,7 @@ static v8::Handle<v8::Value> convertFieldToObject(GSValue* value, GSType type, b
     size_t size;
     v8::Local<v8::Array> list;
     int i;
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     switch (type) {
         case GS_TYPE_LONG:
             return SWIGV8_NUMBER_NEW(value->asLong);
@@ -126,7 +127,7 @@ static v8::Handle<v8::Value> convertFieldToObject(GSValue* value, GSType type, b
             intArrVal = value->asArray.elements.asInteger;
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
-                list->Set(i, SWIG_From_int(intArrVal[i]));
+                list->Set(context, i, SWIG_From_int(intArrVal[i]));
             }
             return list;
         }
@@ -136,7 +137,7 @@ static v8::Handle<v8::Value> convertFieldToObject(GSValue* value, GSType type, b
             stringArrVal = value->asArray.elements.asString;
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
-                list->Set(i, SWIGV8_STRING_NEW((GSChar *)stringArrVal[i]));
+                list->Set(context, i, SWIGV8_STRING_NEW((GSChar *)stringArrVal[i]));
             }
             return list;
         }
@@ -146,7 +147,7 @@ static v8::Handle<v8::Value> convertFieldToObject(GSValue* value, GSType type, b
             boolArrVal = value->asArray.elements.asBool;
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
-                list->Set(i, SWIG_From_bool(boolArrVal[i]));
+                list->Set(context, i, SWIG_From_bool(boolArrVal[i]));
             }
             return list;
         }
@@ -156,7 +157,7 @@ static v8::Handle<v8::Value> convertFieldToObject(GSValue* value, GSType type, b
             byteArrVal = value->asArray.elements.asByte;
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
-                list->Set(i, SWIG_From_int(byteArrVal[i]));
+                list->Set(context, i, SWIG_From_int(byteArrVal[i]));
             }
             return list;
         }
@@ -166,7 +167,7 @@ static v8::Handle<v8::Value> convertFieldToObject(GSValue* value, GSType type, b
             shortArrVal = value->asArray.elements.asShort;
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
-                list->Set(i, SWIG_From_int(shortArrVal[i]));
+                list->Set(context, i, SWIG_From_int(shortArrVal[i]));
             }
             return list;
         }
@@ -176,7 +177,7 @@ static v8::Handle<v8::Value> convertFieldToObject(GSValue* value, GSType type, b
             longArrVal = value->asArray.elements.asLong;
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
-                list->Set(i, SWIGV8_NUMBER_NEW(longArrVal[i]));
+                list->Set(context, i, SWIGV8_NUMBER_NEW(longArrVal[i]));
             }
             return list;
         }
@@ -186,7 +187,8 @@ static v8::Handle<v8::Value> convertFieldToObject(GSValue* value, GSType type, b
             floatArrVal = value->asArray.elements.asFloat;
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
-                list->Set(i, SWIGV8_NUMBER_NEW(((float *)floatArrVal)[i]));
+                list->Set(context, i,
+                    SWIGV8_NUMBER_NEW(((float *)floatArrVal)[i]));
             }
             return list;
         }
@@ -196,7 +198,8 @@ static v8::Handle<v8::Value> convertFieldToObject(GSValue* value, GSType type, b
             doubleArrVal = value->asArray.elements.asDouble;
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
-                list->Set(i, SWIGV8_NUMBER_NEW(((double *)doubleArrVal)[i]));
+                list->Set(context, i,
+                    SWIGV8_NUMBER_NEW(((double *)doubleArrVal)[i]));
             }
             return list;
         }
@@ -206,7 +209,8 @@ static v8::Handle<v8::Value> convertFieldToObject(GSValue* value, GSType type, b
             timestampArrVal = value->asArray.elements.asTimestamp;
             list = SWIGV8_ARRAY_NEW();
             for (i = 0; i < size; i++) {
-                list->Set(i, convertTimestampToObject((GSTimestamp*)&(timestampArrVal[i]), timestampToFloat));
+                list->Set(context, i, convertTimestampToObject(
+                    (GSTimestamp*)&(timestampArrVal[i]), timestampToFloat));
             }
             return list;
         }
@@ -256,14 +260,17 @@ static GSChar** convertObjectToStringArray(v8::Local<v8::Value> value, int* size
         return NULL;
     }
 
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     memset(arrString, 0x0, arraySize * sizeof(GSChar*));
     for (int i = 0; i < arraySize; i++) {
-        if (!arr->Get(i)->IsString()) {
+        v8::Local<v8::Value> value = arr->Get(context, i).
+                                         ToLocalChecked();
+        if (!value->IsString()) {
             cleanStringArray(arrString, arraySize);
             return NULL;
         }
-        
-        int res = SWIG_AsCharPtrAndSize(arr->Get(i), &v, NULL, &alloc);
+
+        int res = SWIG_AsCharPtrAndSize(value, &v, NULL, &alloc);
         if (!SWIG_IsOK(res)) {
             cleanStringArray(arrString, arraySize);
             return NULL;
@@ -307,7 +314,7 @@ static bool convertObjectToBool(v8::Local<v8::Value> value, bool* boolValPtr) {
 }
 
 %fragment("convertTimestampToObject", "header") {
-static v8::Handle<v8::Value> convertTimestampToObject(GSTimestamp* timestamp, bool timestamp_to_float = true) {
+static v8::Local<v8::Value> convertTimestampToObject(GSTimestamp* timestamp, bool timestamp_to_float = true) {
     if (timestamp_to_float) {
         return SWIGV8_NUMBER_NEW(*timestamp);
     }
@@ -315,7 +322,7 @@ static v8::Handle<v8::Value> convertTimestampToObject(GSTimestamp* timestamp, bo
 %#if (V8_MAJOR_VERSION-0) < 4 && (SWIG_V8_VERSION < 0x032318)
     return v8::Date::New(*timestamp);
 %#else
-    return v8::Date::New(v8::Isolate::GetCurrent(), *timestamp);
+    return v8::Date::New(Nan::GetCurrentContext(), (double)(*timestamp)).ToLocalChecked();
 %#endif
 }
 }
@@ -518,6 +525,7 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
     }
 
     int checkConvert = 0;
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     switch (type) {
         case GS_TYPE_STRING: {
             GSChar* stringVal;
@@ -665,7 +673,8 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
                 return false;
             }
             for (i = 0; i < size; i++) {
-                checkConvert = SWIG_AsVal_int(arr->Get(i), (intArrVal + i));
+                v8::Local<v8::Value> value = arr->Get(context, i).ToLocalChecked();
+                checkConvert = SWIG_AsVal_int(value, (intArrVal + i));
                 if (!SWIG_IsOK(checkConvert)) {
                     delete[] intArrVal;
                     intArrVal = NULL;
@@ -689,7 +698,8 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
                 return false;
             }
             for (i = 0; i < size; i++) {
-                vbool = convertObjectToBool(arr->Get(i), (bool*)(boolArrVal + i));
+                v8::Local<v8::Value> value = arr->Get(context, i).ToLocalChecked();
+                vbool = convertObjectToBool(value, (bool*)(boolArrVal + i));
                 if (!vbool) {
                     delete[] boolArrVal;
                     boolArrVal = NULL;
@@ -713,12 +723,13 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
                 return false;
             }
             for (i = 0; i < size; i++) {
-                checkConvert = SWIG_AsVal_int(arr->Get(i), &tmpInt);
+                v8::Local<v8::Value> value = arr->Get(context, i).ToLocalChecked();
+                checkConvert = SWIG_AsVal_int(value, &tmpInt);
                 byteArrVal[i] = (int8_t)tmpInt;
                  if (!SWIG_IsOK(checkConvert) ||
                     tmpInt < std::numeric_limits<int8_t>::min() ||
                     tmpInt > std::numeric_limits<int8_t>::max() ||
-                    (!arr->Get(i)->IsInt32())) {
+                    (!value->IsInt32())) {
                     delete[] byteArrVal;
                     byteArrVal = NULL;
                     return false;
@@ -741,11 +752,12 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
                 return false;
             }
             for (i = 0; i < size; i++) {
-                checkConvert = SWIG_AsVal_int(arr->Get(i), &tmpInt);
+                v8::Local<v8::Value> value = arr->Get(context, i).ToLocalChecked();
+                checkConvert = SWIG_AsVal_int(value, &tmpInt);
                 if (!SWIG_IsOK(checkConvert) ||
                     tmpInt < std::numeric_limits<int16_t>::min() ||
                     tmpInt > std::numeric_limits<int16_t>::max() ||
-                    (!arr->Get(i)->IsInt32())) {
+                    (!value->IsInt32())) {
                         delete[] shortArrVal;
                         shortArrVal = NULL;
                     return false;
@@ -769,7 +781,8 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
                 return false;
             }
             for (i = 0; i < size; i++) {
-                vbool = convertObjectToLong(arr->Get(i), &longArrVal[i]);
+                v8::Local<v8::Value> value = arr->Get(context, i).ToLocalChecked();
+                vbool = convertObjectToLong(value, &longArrVal[i]);
                 if (!vbool) {
                     delete[] longArrVal;
                     longArrVal = NULL;
@@ -793,7 +806,8 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
                 return false;
             }
             for (i = 0; i < size; i++) {
-                vbool = convertObjectToFloat(arr->Get(i), &floatArrVal[i]);
+                v8::Local<v8::Value> value = arr->Get(context, i).ToLocalChecked();
+                vbool = convertObjectToFloat(value, &floatArrVal[i]);
                 if (!vbool) {
                     delete[] floatArrVal;
                     floatArrVal = NULL;
@@ -818,7 +832,8 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
                 return false;
             }
             for (i = 0; i < size; i++) {
-                vbool = convertObjectToDouble(arr->Get(i), &tmpDouble);
+                v8::Local<v8::Value> value = arr->Get(context, i).ToLocalChecked();
+                vbool = convertObjectToDouble(value, &tmpDouble);
                 doubleArrVal[i] = tmpDouble;
                 if (!vbool) {
                     delete[] doubleArrVal;
@@ -844,7 +859,8 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
             }
             bool checkRet;
             for (i = 0; i < size; i++) {
-                checkRet = convertObjectToGSTimestamp(arr->Get(i), (timestampArrVal + i));
+                v8::Local<v8::Value> value = arr->Get(context, i).ToLocalChecked();
+                checkRet = convertObjectToGSTimestamp(value, (timestampArrVal + i));
                 if (!checkRet) {
                     delete[] timestampArrVal;
                     timestampArrVal = NULL;
@@ -875,8 +891,9 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
         SWIG_V8_Raise("Expected object property as input");
         SWIG_fail;
     }
-    obj = $input->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
-    keys = obj->GetOwnPropertyNames();
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
+    obj = $input->ToObject(context).ToLocalChecked();
+    keys = obj->GetOwnPropertyNames(context).ToLocalChecked();
     int len = (int) keys->Length();
     char* name = 0;
     $1 = NULL;
@@ -897,23 +914,26 @@ static bool convertToFieldWithType(GSRow *row, int column, v8::Local<v8::Value> 
 
         j = 0;
         for (int i = 0; i < len; i++) {
-            res = SWIG_AsCharPtrAndSize(keys->Get(i), &name, &size, &alloc[j]);
+            v8::Local<v8::Value> key = keys->Get(context, i).ToLocalChecked();
+            res = SWIG_AsCharPtrAndSize(key, &name, &size, &alloc[j]);
             if (!SWIG_IsOK(res)) {
                 freeargGetStore($1, $3, $4, $5, $6, $7, $8, alloc);
                 %variable_fail(res, "String", "name");
             }
 
+            v8::Local<v8::Value> value = obj->Get(context, key).
+                                             ToLocalChecked();
             if (strcmp(name, "port") == 0) {
                 //Input valid is number only
-                if (obj->Get(keys->Get(i))->IsInt32()) {
-                    $2 = obj->Get(keys->Get(i))->IntegerValue(Nan::GetCurrentContext()).FromJust();
+                if (value->IsInt32()) {
+                    $2 = value->IntegerValue(context).FromJust();
                 } else {
                     cleanString(name, alloc[j]);
                     freeargGetStore($1, $3, $4, $5, $6, $7, $8, alloc);
                     %variable_fail(res, "String", "value");
                 }
             } else {
-                res = SWIG_AsCharPtrAndSize(obj->Get(keys->Get(i)), &v, &size, &alloc[j + 1]);
+                res = SWIG_AsCharPtrAndSize(value, &v, &size, &alloc[j + 1]);
                 if (!SWIG_IsOK(res)) {
                     cleanString(name, alloc[j]);
                     freeargGetStore($1, $3, $4, $5, $6, $7, $8, alloc);
@@ -1012,8 +1032,9 @@ static void freeargGetStore(const char* host, const char* cluster_name,
                 SWIG_V8_Raise("Memory allocation error");
                 SWIG_fail;
             }
+            v8::Local<v8::Context> context = Nan::GetCurrentContext();
             for (int i = 0; i < $2; i++) {
-                query = arr->Get(i);
+                query = arr->Get(context, i).ToLocalChecked();
                 res = SWIG_ConvertPtr(query, (void**)&vquery, $descriptor(griddb::Query*), 0);
                 if (!SWIG_IsOK(res)) {
                     delete[] $1;
@@ -1043,9 +1064,10 @@ static void freeargGetStore(const char* host, const char* cluster_name,
 %typemap(argout, numinputs = 0) (const GSChar *const ** stringList, size_t *size)
 (v8::Local<v8::Array> arr, v8::Handle<v8::String> val) {
     arr = SWIGV8_ARRAY_NEW();
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     for (int i = 0; i < size1$argnum; i++) {
         val = SWIGV8_STRING_NEW2(nameList1$argnum[i], strlen(nameList1$argnum[i]));
-        arr->Set(i, val);
+        arr->Set(context, i, val);
     }
 
     $result = arr;
@@ -1059,9 +1081,10 @@ static void freeargGetStore(const char* host, const char* cluster_name,
 %typemap(argout, numinputs = 0) (const int **intList, size_t *size)
 (v8::Local<v8::Array> arr, v8::Handle<v8::Integer> val) {
     arr = SWIGV8_ARRAY_NEW();
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     for (int i = 0; i < size1$argnum; i++) {
         val = SWIGV8_INTEGER_NEW(intList1$argnum[i]);
-        arr->Set(i, val);
+        arr->Set(context, i, val);
     }
 
     $result = arr;
@@ -1075,9 +1098,10 @@ static void freeargGetStore(const char* host, const char* cluster_name,
 %typemap(argout, numinputs = 0) (const long **longList, size_t *size)
 (v8::Local<v8::Array> arr, v8::Handle<v8::Number> val) {
     arr = SWIGV8_ARRAY_NEW();
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     for (int i = 0; i < size1$argnum; i++) {
         val = SWIGV8_NUMBER_NEW(longList1$argnum[i]);
-        arr->Set(i, val);
+        arr->Set(context, i, val);
     }
 
     $result = arr;
@@ -1112,9 +1136,11 @@ static void freeargGetStore(const char* host, const char* cluster_name,
         SWIG_fail;
     }
     GSType* typeList = arg1->getGSTypeList();
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     for (int i = 0; i < leng; i++) {
         GSType type = typeList[i];
-        if (!(convertToFieldWithType(tmpRow, i, arr->Get(i), type))) {
+        v8::Local<v8::Value> value = arr->Get(context, i).ToLocalChecked();
+        if (!(convertToFieldWithType(tmpRow, i, value, type))) {
             char errorMsg[60];
             sprintf(errorMsg, "Invalid value for column %d, type should be : %d", i, type);
             SWIG_V8_Raise(errorMsg);
@@ -1153,6 +1179,7 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
     GSResult ret;
     GSValue mValue;
     bool retVal = true;
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     for (int i = 0; i < columnCount; i++) {
         //Check NULL value
         GSBool nullValue;
@@ -1165,7 +1192,7 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
             return retVal;
         }
         if (nullValue) {
-            outList->Set(i, SWIGV8_NULL());
+            outList->Set(context, i, SWIGV8_NULL());
             continue;
         }
 
@@ -1176,7 +1203,7 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 if (!GS_SUCCEEDED(ret)) {
                     break;
                 }
-                outList->Set(i, SWIGV8_NUMBER_NEW(longValue));
+                outList->Set(context, i, SWIGV8_NUMBER_NEW(longValue));
                 break;
             }
             case GS_TYPE_STRING: {
@@ -1185,7 +1212,7 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 if (!GS_SUCCEEDED(ret)) {
                     break;
                 }
-                outList->Set(i, SWIGV8_STRING_NEW((const char * )stringValue));
+                outList->Set(context, i, SWIGV8_STRING_NEW((const char * )stringValue));
                 break;
             }
             case GS_TYPE_BLOB: {
@@ -1194,7 +1221,8 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 if (!GS_SUCCEEDED(ret)) {
                     break;
                 }
-                outList->Set(i, Nan::CopyBuffer((char *)blobValue.data, blobValue.size).ToLocalChecked());
+                outList->Set(context, i, Nan::CopyBuffer((char *)blobValue.data,
+                    blobValue.size).ToLocalChecked());
                 break;
             }
             case GS_TYPE_BOOL: {
@@ -1203,7 +1231,7 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 if (!GS_SUCCEEDED(ret)) {
                     break;
                 }
-                outList->Set(i, SWIGV8_BOOLEAN_NEW((bool)boolValue));
+                outList->Set(context, i, SWIGV8_BOOLEAN_NEW((bool)boolValue));
                 break;
             }
             case GS_TYPE_INTEGER: {
@@ -1212,7 +1240,7 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 if (!GS_SUCCEEDED(ret)) {
                     break;
                 }
-                outList->Set(i, SWIGV8_INT32_NEW(intValue));
+                outList->Set(context, i, SWIGV8_INT32_NEW(intValue));
                 break;
             }
             case GS_TYPE_FLOAT: {
@@ -1221,7 +1249,7 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 if (!GS_SUCCEEDED(ret)) {
                     break;
                 }
-                outList->Set(i, SWIGV8_NUMBER_NEW(floatValue));
+                outList->Set(context, i, SWIGV8_NUMBER_NEW(floatValue));
                 break;
             }
             case GS_TYPE_DOUBLE: {
@@ -1230,7 +1258,7 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 if (!GS_SUCCEEDED(ret)) {
                     break;
                 }
-                outList->Set(i, SWIGV8_NUMBER_NEW(doubleValue));
+                outList->Set(context, i, SWIGV8_NUMBER_NEW(doubleValue));
                 break;
             }
             case GS_TYPE_TIMESTAMP: {
@@ -1239,7 +1267,7 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 if (!GS_SUCCEEDED(ret)) {
                     break;
                 }
-                outList->Set(i, convertTimestampToObject(&timestampValue, timestampOutput));
+                outList->Set(context, i, convertTimestampToObject(&timestampValue, timestampOutput));
                 break;
             }
             case GS_TYPE_BYTE: {
@@ -1248,7 +1276,7 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 if (!GS_SUCCEEDED(ret)) {
                     break;
                 }
-                outList->Set(i, SWIGV8_INT32_NEW(byteValue));
+                outList->Set(context, i, SWIGV8_INT32_NEW(byteValue));
                 break;
             }
             case GS_TYPE_SHORT: {
@@ -1257,7 +1285,7 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 if (!GS_SUCCEEDED(ret)) {
                     break;
                 }
-                outList->Set(i, SWIGV8_INT32_NEW(shortValue));
+                outList->Set(context, i, SWIGV8_INT32_NEW(shortValue));
                 break;
             }
             case GS_TYPE_GEOMETRY: {
@@ -1266,7 +1294,7 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 if (!GS_SUCCEEDED(ret)) {
                     break;
                 }
-                outList->Set(i, SWIGV8_STRING_NEW(geoValue));
+                outList->Set(context, i, SWIGV8_STRING_NEW(geoValue));
                 break;
             }
             case GS_TYPE_INTEGER_ARRAY: {
@@ -1278,9 +1306,9 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 }
                 v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
                 for (int j = 0; j < size; j++) {
-                    list->Set(j, SWIG_From_int(intArr[j]));
+                    list->Set(context, j, SWIG_From_int(intArr[j]));
                 }
-                outList->Set(i, list);
+                outList->Set(context, i, list);
                 break;
             }
             case GS_TYPE_STRING_ARRAY: {
@@ -1292,9 +1320,10 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 }
                 v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
                 for (int j = 0; j < size; j++) {
-                    list->Set(j, SWIGV8_STRING_NEW((GSChar *)stringArrVal[j]));
+                    list->Set(context, j,
+                        SWIGV8_STRING_NEW((GSChar *)stringArrVal[j]));
                 }
-                outList->Set(i, list);
+                outList->Set(context, i, list);
                 break;
             }
             case GS_TYPE_BOOL_ARRAY: {
@@ -1306,9 +1335,9 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 }
                 v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
                 for (int j = 0; j < size; j++) {
-                    list->Set(j, SWIG_From_bool(boolArr[j]));
+                    list->Set(context, j, SWIG_From_bool(boolArr[j]));
                 }
-                outList->Set(i, list);
+                outList->Set(context, i, list);
                 break;
             }
             case GS_TYPE_BYTE_ARRAY: {
@@ -1320,9 +1349,9 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 }
                 v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
                 for (int j = 0; j < size; j++) {
-                    list->Set(j, SWIG_From_int(byteArr[j]));
+                    list->Set(context, j, SWIG_From_int(byteArr[j]));
                 }
-                outList->Set(i, list);
+                outList->Set(context, i, list);
                 break;
             }
             case GS_TYPE_SHORT_ARRAY: {
@@ -1334,9 +1363,9 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 }
                 v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
                 for (int j = 0; j < size; j++) {
-                    list->Set(j, SWIG_From_int(shortArr[j]));
+                    list->Set(context, j, SWIG_From_int(shortArr[j]));
                 }
-                outList->Set(i, list);
+                outList->Set(context, i, list);
                 break;
             }
             case GS_TYPE_LONG_ARRAY: {
@@ -1348,9 +1377,9 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 }
                 v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
                 for (int j = 0; j < size; j++) {
-                    list->Set(j, SWIGV8_NUMBER_NEW(longArr[j]));
+                    list->Set(context, j, SWIGV8_NUMBER_NEW(longArr[j]));
                 }
-                outList->Set(i, list);
+                outList->Set(context, i, list);
                 break;
             }
             case GS_TYPE_FLOAT_ARRAY: {
@@ -1362,9 +1391,10 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 }
                 v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
                 for (int j = 0; j < size; j++) {
-                    list->Set(j, SWIGV8_NUMBER_NEW(((float *)floatArr)[j]));
+                    list->Set(context, j,
+                        SWIGV8_NUMBER_NEW(((float *)floatArr)[j]));
                 }
-                outList->Set(i, list);
+                outList->Set(context, i, list);
                 break;
             }
             case GS_TYPE_DOUBLE_ARRAY: {
@@ -1376,9 +1406,10 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 }
                 v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
                 for (int j = 0; j < size; j++) {
-                    list->Set(j, SWIGV8_NUMBER_NEW(((double *)doubleArr)[j]));
+                    list->Set(context, j,
+                        SWIGV8_NUMBER_NEW(((double *)doubleArr)[j]));
                 }
-                outList->Set(i, list);
+                outList->Set(context, i, list);
                 break;
             }
             case GS_TYPE_TIMESTAMP_ARRAY: {
@@ -1390,9 +1421,10 @@ static bool getRowFields(GSRow* row, int columnCount, GSType* typeList, bool tim
                 }
                 v8::Local<v8::Array> list = SWIGV8_ARRAY_NEW();
                 for (int j = 0; j < size; j++) {
-                    list->Set(j, convertTimestampToObject((GSTimestamp*)&(timestampArr[j]), timestampOutput));
+                    list->Set(context, j, convertTimestampToObject(
+                        (GSTimestamp*)&(timestampArr[j]), timestampOutput));
                 }
-                outList->Set(i, list);
+                outList->Set(context, i, list);
                 break;
             }
             default: {
@@ -1452,8 +1484,9 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
     $2 = NULL;
     $3 = NULL;
     $4 = 0;
-    obj = $input->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
-    keys = obj->GetOwnPropertyNames();
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
+    obj = $input->ToObject(context).ToLocalChecked();
+    keys = obj->GetOwnPropertyNames(context).ToLocalChecked();
     $4 = (size_t) keys->Length();
     griddb::Container* tmpContainer;
 
@@ -1471,7 +1504,8 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
 
         for (int i = 0; i < $4; i++) {
             // Get container name
-            res = SWIG_AsCharPtrAndSize(keys->Get(i), &v, &sizeTmp, &alloc[i]);
+            v8::Local<v8::Value> key = keys->Get(context, i).ToLocalChecked();
+            res = SWIG_AsCharPtrAndSize(key, &v, &sizeTmp, &alloc[i]);
             if (!SWIG_IsOK(res)) {
                 freeargStoreMultiPut($1, $2, $3, $4, alloc);
                 %variable_fail(res, "String", "containerName");
@@ -1483,13 +1517,14 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
                 $3[i] = NULL;
             }
             // Get row
-            if (!(obj->Get(keys->Get(i)))->IsArray()) {
+            v8::Local<v8::Value> value = obj->Get(context, key).ToLocalChecked();
+            if (!value->IsArray()) {
                 freeargStoreMultiPut($1, $2, $3, $4, alloc);
                 SWIG_V8_Raise("Expected an array as rowList");
                 SWIG_fail;
             }
 
-            arr = v8::Local<v8::Array>::Cast(obj->Get(keys->Get(i)));
+            arr = v8::Local<v8::Array>::Cast(value);
             $2[i] = (int) arr->Length();
             try {
                 $1[i] = new GSRow*[$2[i]]();
@@ -1547,7 +1582,9 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
             GSResult ret;
             for (int j = 0; j < $2[i]; j++) {
                 ret = gsCreateRowByContainer(tmpContainer->getGSContainerPtr(), &$1[i][j]);
-                rowArr = v8::Local<v8::Array>::Cast(arr->Get(j));
+                v8::Local<v8::Value> rowArrValue =
+                    arr->Get(context, j).ToLocalChecked();
+                rowArr = v8::Local<v8::Array>::Cast(rowArrValue);
                 if (!rowArr->IsArray()) {
                     delete containerInfoTmp;
                     delete[] typeArr;
@@ -1559,7 +1596,9 @@ size_t sizeTmp = 0, int* alloc = 0, char* v = 0) {
                 int rowLen = (int) rowArr->Length();
                 int k;
                 for (k = 0; k < rowLen; k++) {
-                    if (!(convertToFieldWithType($1[i][j], k, rowArr->Get(k), typeArr[k]))) {
+                    v8::Local<v8::Value> rowValue =
+                        rowArr->Get(context, k).ToLocalChecked();
+                    if (!(convertToFieldWithType($1[i][j], k, rowValue, typeArr[k]))) {
                         char errorMsg[60];
                         sprintf(errorMsg, "Invalid value for column %d, type should be : %d", k, typeArr[k]);
                         delete tmpContainer;
@@ -1627,8 +1666,9 @@ static void freeargStoreMultiPut(GSRow*** listRow, const int *listRowContainerCo
         SWIG_V8_Raise("Expected object property as input");
         SWIG_fail;
     }
-    obj = $input->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
-    keys = obj->GetOwnPropertyNames();
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
+    obj = $input->ToObject(context).ToLocalChecked();
+    keys = obj->GetOwnPropertyNames(context).ToLocalChecked();
     $1 = NULL;
     $2 = (int) keys->Length();
     $3 = &tmpEntryList;
@@ -1656,7 +1696,8 @@ static void freeargStoreMultiPut(GSRow*** listRow, const int *listRowContainerCo
         for (int i = 0; i < $2; i++) {
             GSRowKeyPredicateEntry *predicateEntry = &pList[i];
             // Get container name
-            res = SWIG_AsCharPtrAndSize(keys->Get(i), &v, &size, &alloc[i]);
+            v8::Local<v8::Value> key = keys->Get(context, i).ToLocalChecked();
+            res = SWIG_AsCharPtrAndSize(key, &v, &size, &alloc[i]);
             if (!SWIG_IsOK(res)) {
                 freeargStoreMultiGet($1, $2, NULL, NULL, NULL, NULL, NULL, alloc);
                 %variable_fail(res, "String", "containerName");
@@ -1664,7 +1705,8 @@ static void freeargStoreMultiPut(GSRow*** listRow, const int *listRowContainerCo
             predicateEntry->containerName = v;
 
             // Get predicate
-            res = SWIG_ConvertPtr((obj->Get(keys->Get(i))), (void**)&vpredicate, $descriptor(griddb::RowKeyPredicate*), 0);
+            v8::Local<v8::Value> value = obj->Get(context, key).ToLocalChecked();
+            res = SWIG_ConvertPtr(value, (void**)&vpredicate, $descriptor(griddb::RowKeyPredicate*), 0);
             if (!SWIG_IsOK(res)) {
                 freeargStoreMultiGet($1, $2, NULL, NULL, NULL, NULL, NULL, alloc);
                 SWIG_V8_Raise("Convert RowKeyPredicate pointer failed");
@@ -1688,6 +1730,7 @@ static void freeargStoreMultiPut(GSRow*** listRow, const int *listRowContainerCo
     bool retVal;
     int errorColumn;
     GSType errorType;
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     for (int i = 0; i < numContainer; i++) {
         key = SWIGV8_STRING_NEW2((*$3)[i].containerName, strlen((char*)(*$3)[i].containerName));
         arr = SWIGV8_ARRAY_NEW();
@@ -1702,9 +1745,9 @@ static void freeargStoreMultiPut(GSRow*** listRow, const int *listRowContainerCo
                 SWIG_V8_Raise(errorMsg);
                 SWIG_fail;
             }
-            arr->Set(j, rowArr);
+            arr->Set(context, j, rowArr);
         }
-        obj->Set(key, arr);
+        obj->Set(context, key, arr);
     }
     $result = obj;
 }
@@ -1795,10 +1838,12 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
 }
 
 %typemap(argout, fragment = "convertFieldToObject") (griddb::Field* startField, griddb::Field* finishField) {
-    v8::Local<v8::Array> arr;
-    arr = SWIGV8_ARRAY_NEW();
-    arr->Set(0, convertFieldToObject(&$1->value, $1->type, arg1->timestamp_output_with_float));
-    arr->Set(1, convertFieldToObject(&$2->value, $2->type, arg1->timestamp_output_with_float));
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
+    v8::Local<v8::Array> arr = SWIGV8_ARRAY_NEW();
+    arr->Set(context, 0, convertFieldToObject(
+        &$1->value, $1->type, arg1->timestamp_output_with_float));
+    arr->Set(context, 1, convertFieldToObject(
+        &$2->value, $2->type, arg1->timestamp_output_with_float));
     $result = arr;
 }
 
@@ -1814,6 +1859,7 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
     $2 = (int)arr->Length();
     $1 = NULL;
 
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     if ($2 > 0) {
         try {
             $1 = new griddb::Field[$2]();
@@ -1823,7 +1869,8 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
         }
         GSType type = arg1->get_key_type();
         for (int i = 0; i < $2; i++) {
-            if (!(convertToRowKeyFieldWithType($1[i], arr->Get(i), type))) {
+            v8::Local<v8::Value> value = arr->Get(context, i).ToLocalChecked();
+            if (!(convertToRowKeyFieldWithType($1[i], value, type))) {
                 delete [] $1;
                 $1 = NULL;
                 SWIG_V8_Raise("Can not create row based on input");
@@ -1849,11 +1896,11 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
 }
 
 %typemap(argout, numinputs = 0, fragment = "convertFieldToObject") (griddb::Field **keys, size_t* keyCount) {
-    v8::Local<v8::Array> obj;
-    obj = SWIGV8_ARRAY_NEW();
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
+    v8::Local<v8::Array> obj = SWIGV8_ARRAY_NEW();
     for (int i = 0; i < keyCount1$argnum; i++) {
         v8::Handle<v8::Value> value = convertFieldToObject(&keys1$argnum[i].value, keys1$argnum[i].type, arg1->timestamp_output_with_float);
-        obj->Set(i, value);
+        obj->Set(context, i, value);
     }
     $result = obj;
 }
@@ -1876,8 +1923,9 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
     v8::Local<v8::Array> arr = v8::Local<v8::Array>::Cast($input);
     $2 = (size_t)arr->Length();
 
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     for (int i = 0; i < $2; i++) {
-        if (!arr->Get(i)->IsArray()) {
+        if (!arr->Get(context, i).ToLocalChecked()->IsArray()) {
             SWIG_V8_Raise("Expected array of array as input");
             SWIG_fail;
         }
@@ -1894,7 +1942,9 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
         }
         int length;
         for (int i = 0; i < $2; i++) {
-            v8::Local<v8::Array> fieldArr = v8::Local<v8::Array>::Cast(arr->Get(i));
+            v8::Local<v8::Value> fieldArrValue =
+                arr->Get(context, i).ToLocalChecked();
+            v8::Local<v8::Array> fieldArr = v8::Local<v8::Array>::Cast(fieldArrValue);
             length = (int)fieldArr->Length();
             if (length != arg1->getColumnCount()) {
                 freeargContainerMultiPut($1, i);
@@ -1909,7 +1959,9 @@ static void freeargStoreMultiGet(const GSRowKeyPredicateEntry *const * predicate
             }
             for (int k = 0; k < length; k++) {
                 GSType type = typeList[k];
-                if (!(convertToFieldWithType($1[i], k, fieldArr->Get(k), type))) {
+                v8::Local<v8::Value> fieldValue = fieldArr->Get(context, k).
+                                                  ToLocalChecked();
+                if (!(convertToFieldWithType($1[i], k, fieldValue, type))) {
                     char errorMsg[200];
                     sprintf(errorMsg, "Invalid value for row %d, column %d, type should be : %d", i, k, type);
                     freeargContainerMultiPut($1, i + 1);
@@ -1946,18 +1998,18 @@ static void freeargContainerMultiPut(GSRow** listRowdata, int rowCount) {
 }
 
 %typemap(argout) (GSQueryAnalysisEntry* queryAnalysis) {
-    v8::Local<v8::Array> obj;
-    obj = SWIGV8_ARRAY_NEW();
-    obj->Set(0, SWIGV8_INTEGER_NEW($1->id));
-    obj->Set(1, SWIGV8_INTEGER_NEW($1->depth));
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
+    v8::Local<v8::Array> obj = SWIGV8_ARRAY_NEW();
+    obj->Set(context, 0, SWIGV8_INTEGER_NEW($1->id));
+    obj->Set(context, 1, SWIGV8_INTEGER_NEW($1->depth));
     v8::Handle<v8::String> str = SWIGV8_STRING_NEW2($1->type, strlen((char*)$1->type));
-    obj->Set(2, str);
+    obj->Set(context, 2, str);
     str = SWIGV8_STRING_NEW2($1->valueType, strlen((char*)$1->valueType));
-    obj->Set(3, str);
+    obj->Set(context, 3, str);
     str = SWIGV8_STRING_NEW2($1->value, strlen((char*)$1->value));
-    obj->Set(4, str);
+    obj->Set(context, 4, str);
     str = SWIGV8_STRING_NEW2($1->statement, strlen((char*)$1->statement));
-    obj->Set(5, str);
+    obj->Set(context, 5, str);
 
     $result = obj;
 }
@@ -2048,6 +2100,7 @@ static void freeargContainerMultiPut(GSRow** listRowdata, int rowCount) {
     size_t len = (size_t)arr->Length();
     GSColumnInfo* containerInfo;
     $1 = &infolist;
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     if (len) {
         try {
             containerInfo = new GSColumnInfo[len]();
@@ -2067,20 +2120,21 @@ static void freeargContainerMultiPut(GSRow** listRowdata, int rowCount) {
         $1->size = len;
 
         for (int i = 0; i < len; i++) {
-            if (!(arr->Get(i))->IsArray()) {
+            v8::Local<v8::Value> colInfoKey = arr->Get(context, i).ToLocalChecked();
+            if (!colInfoKey->IsArray()) {
                 freeargColumnInfoList($1, alloc);
                 SWIG_V8_Raise("Expected array property as ColumnInfo element");
                 SWIG_fail;
             }
 
-            colInfo = v8::Local<v8::Array>::Cast(arr->Get(i));
+            colInfo = v8::Local<v8::Array>::Cast(colInfoKey);
             if (colInfo->Length() < 2) {
                 freeargColumnInfoList($1, alloc);
                 SWIG_V8_Raise("Expected at least two elements for ColumnInfo property");
                 SWIG_fail;
             }
-            v8::Local<v8::Value> key = colInfo->Get(0);
-            v8::Local<v8::Value> value = colInfo->Get(1);
+            v8::Local<v8::Value> key = colInfo->Get(context, 0).ToLocalChecked();
+            v8::Local<v8::Value> value = colInfo->Get(context, 1).ToLocalChecked();
 
             res = SWIG_AsCharPtrAndSize(key, &v, &sizeTmp, &alloc[i]);
             if (!SWIG_IsOK(res)) {
@@ -2101,7 +2155,8 @@ static void freeargContainerMultiPut(GSRow** listRowdata, int rowCount) {
             containerInfo[i].type = value->Uint32Value(context).FromJust();
 
             if (colInfo->Length() == 3) {
-                v8::Local<v8::Value> options = colInfo->Get(2);
+                v8::Local<v8::Value> options = colInfo->Get(context, 2).
+                                                   ToLocalChecked();
 
                 if (!options->IsUint32()) {
                     freeargColumnInfoList($1, alloc);
@@ -2145,6 +2200,7 @@ static void freeargColumnInfoList(ColumnInfoList* infoList, int* alloc) {
 %typemap(out) (ColumnInfoList*) {
     v8::Local<v8::Array> obj;
     size_t len = $1->size;
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     if (len > 0) {
         obj = SWIGV8_ARRAY_NEW();
         if (obj->IsNull()) {
@@ -2155,10 +2211,10 @@ static void freeargColumnInfoList(ColumnInfoList* infoList, int* alloc) {
             v8::Local<v8::Array> prop;
             prop = SWIGV8_ARRAY_NEW();
             v8::Handle<v8::String> str = SWIGV8_STRING_NEW2($1->columnInfo[i].name, strlen((char*)$1->columnInfo[i].name));
-            prop->Set(0, str);
-            prop->Set(1, SWIGV8_NUMBER_NEW($1->columnInfo[i].type));
-            prop->Set(2, SWIGV8_NUMBER_NEW($1->columnInfo[i].options));
-            obj->Set(i, prop);
+            prop->Set(context, 0, str);
+            prop->Set(context, 1, SWIGV8_NUMBER_NEW($1->columnInfo[i].type));
+            prop->Set(context, 2, SWIGV8_NUMBER_NEW($1->columnInfo[i].options));
+            obj->Set(context, i, prop);
         }
     }
     $result = obj;
@@ -2177,7 +2233,7 @@ static void freeargColumnInfoList(ColumnInfoList* infoList, int* alloc) {
     }
     v8::Local<v8::Context> context = Nan::GetCurrentContext();
     obj = $input->ToObject(context).ToLocalChecked();
-    keys = obj->GetOwnPropertyNames();
+    keys = obj->GetOwnPropertyNames(Nan::GetCurrentContext()).ToLocalChecked();
     int len = (int) keys->Length();
     //Create $1, $2, $3 with default value
     $1 = NULL;
@@ -2188,20 +2244,22 @@ static void freeargColumnInfoList(ColumnInfoList* infoList, int* alloc) {
     char errorMsg[60];
     if (len > 0) {
         for (int i = 0; i < len; i++) {
-            res = SWIG_AsCharPtrAndSize(keys->Get(i), &name, &size, &allocKey);
+            v8::Local<v8::Value> key = keys->Get(context, i).ToLocalChecked();
+            res = SWIG_AsCharPtrAndSize(key, &name, &size, &allocKey);
             if (!SWIG_IsOK(res)) {
                 freeargContainerIndex($1, $3);
                 %variable_fail(res, "String", "name");
             }
+            v8::Local<v8::Value> value = obj->Get(context, key).ToLocalChecked();
             if (strcmp(name, "columnName") == 0 || strcmp(name, "name") == 0) {
-                if (!obj->Get(keys->Get(i))->IsString()) {
+                if (!value->IsString()) {
                     sprintf(errorMsg, "Invalid value for property %s", name);
                     cleanString(name, allocKey);
                     freeargContainerIndex($1, $3);
                     SWIG_V8_Raise(errorMsg);
                     SWIG_fail;
                 }
-                res = SWIG_AsCharPtrAndSize(obj->Get(keys->Get(i)), &v, &size1, &allocValue);
+                res = SWIG_AsCharPtrAndSize(value, &v, &size1, &allocValue);
                 if (!SWIG_IsOK(res)) {
                     freeargContainerIndex($1, $3);
                     %variable_fail(res, "String", "value");
@@ -2215,14 +2273,14 @@ static void freeargColumnInfoList(ColumnInfoList* infoList, int* alloc) {
                     cleanString(v, allocValue);
                 }
             } else if (strcmp(name, "indexType") == 0) {
-                if (!obj->Get(keys->Get(i))->IsInt32()) {
+                if (!value->IsInt32()) {
                     freeargContainerIndex($1, $3);
                     sprintf(errorMsg, "Invalid value for property %s", name);
                     cleanString(name, allocKey);
                     SWIG_V8_Raise(errorMsg);
                     SWIG_fail;
                 }
-                $2 = obj->Get(keys->Get(i))->IntegerValue(context).FromJust();
+                $2 = value->IntegerValue(context).FromJust();
             } else {
                 sprintf(errorMsg, "Invalid property %s", name);
                 cleanString(name, allocKey);
@@ -2263,7 +2321,7 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
     }
     v8::Local<v8::Context> context = Nan::GetCurrentContext();
     obj = $input->ToObject(context).ToLocalChecked();
-    keys = obj->GetOwnPropertyNames();
+    keys = obj->GetOwnPropertyNames(Nan::GetCurrentContext()).ToLocalChecked();
     int len = (int) keys->Length();
     //Create $1, $2 with default value
     $1 = -1;
@@ -2272,18 +2330,21 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
     char errorMsg[60];
     if (len > 0) {
         for (int i = 0; i < len; i++) {
-            res = SWIG_AsCharPtrAndSize(keys->Get(i), &name, &size, &allocKey);
+            v8::Local<v8::Value> key = keys->Get(context, i).ToLocalChecked();
+            res = SWIG_AsCharPtrAndSize(key, &name, &size, &allocKey);
             if (!SWIG_IsOK(res)) {
                 %variable_fail(res, "String", "name");
             }
             if (strcmp(name, "limit") == 0) {
-                if (!obj->Get(keys->Get(i))->IsInt32()) {
+                v8::Local<v8::Value> value = obj->Get(context, key).
+                                                 ToLocalChecked();
+                if (!value->IsInt32()) {
                     sprintf(errorMsg, "Invalid value for property %s", name);
                     cleanString(name, allocKey);
                     SWIG_V8_Raise(errorMsg);
                     SWIG_fail;
                 }
-                $1 = obj->Get(keys->Get(i))->IntegerValue(context).FromJust();
+                $1 = value->IntegerValue(context).FromJust();
             } else if (strcmp(name, "partial") == 0) {
                 cleanString(name, allocKey);
                 //Throw error when parse partial parameter
@@ -2312,7 +2373,7 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
         SWIG_fail;
     }
     obj = $input->ToObject(Nan::GetCurrentContext()).ToLocalChecked();
-    keys = obj->GetOwnPropertyNames();
+    keys = obj->GetOwnPropertyNames(Nan::GetCurrentContext()).ToLocalChecked();
     int len = (int) keys->Length();
     //Create $1, $2, $3, $3, $4, $5, $6 with default value
     $1 = NULL;
@@ -2331,20 +2392,23 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
     v8::Local<v8::Context> context = Nan::GetCurrentContext();
     if (len > 0) {
         for (int i = 0; i < len; i++) {
-            res = SWIG_AsCharPtrAndSize(keys->Get(i), &name, &size, &allocKey);
+            v8::Local<v8::Value> key = keys->Get(context, i).ToLocalChecked();
+            res = SWIG_AsCharPtrAndSize(key, &name, &size, &allocKey);
             if (!SWIG_IsOK(res)) {
                 freeargContainerInfo($1, $2, $3, alloc);
                 %variable_fail(res, "String", "name");
             }
+
+            v8::Local<v8::Value> value = obj->Get(context, key).ToLocalChecked();
             if (strcmp(name, "name") == 0) {
-                if (!obj->Get(keys->Get(i))->IsString()) {
+                if (!value->IsString()) {
                     freeargContainerInfo($1, $2, $3, alloc);
                     sprintf(errorMsg, "Invalid value for property %s", name);
                     SWIG_V8_Raise(errorMsg);
                     cleanString(name, allocKey);
                     SWIG_fail;
                 }
-                res = SWIG_AsCharPtrAndSize(obj->Get(keys->Get(i)), &v, &size1, &allocValue);
+                res = SWIG_AsCharPtrAndSize(value, &v, &size1, &allocValue);
                 if (!SWIG_IsOK(res)) {
                     freeargContainerInfo($1, $2, $3, alloc);
                     sprintf(errorMsg, "Memory allocation error for property %s", name);
@@ -2358,14 +2422,14 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
                     cleanString(v, allocValue);
                 }
             } else if (strcmp(name, "columnInfoList") == 0) {
-                if (!obj->Get(keys->Get(i))->IsArray()) {
+                if (!value->IsArray()) {
                     freeargContainerInfo($1, $2, $3, alloc);
                     sprintf(errorMsg, "Expected array as input for property %s", name);
                     SWIG_V8_Raise(errorMsg);
                     cleanString(name, allocKey);
                     SWIG_fail;
                 }
-                arr = v8::Local<v8::Array>::Cast(obj->Get(keys->Get(i)));
+                arr = v8::Local<v8::Array>::Cast(value);
                 $3 = (int) arr->Length();
                     if ($3 > 0) {
                         try {
@@ -2387,13 +2451,15 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
                         }
 
                         for (int j = 0; j < $3; j++) {
-                            if (!(arr->Get(j))->IsArray()) {
+                            v8::Local<v8::Value> containerInfoKey = arr->Get(context, j).
+                                                                        ToLocalChecked();
+                            if (!containerInfoKey->IsArray()) {
                                 freeargContainerInfo($1, $2, $3, alloc);
                                 cleanString(name, allocKey);
                                 SWIG_V8_Raise("Expected array property as ColumnInfo element");
                                 SWIG_fail;
                             }
-                            colInfo = v8::Local<v8::Array>::Cast(arr->Get(j));
+                            colInfo = v8::Local<v8::Array>::Cast(containerInfoKey);
                             if ((int)colInfo->Length() < 2 || (int)colInfo->Length() > 3) {
                                 freeargContainerInfo($1, $2, $3, alloc);
                                 cleanString(name, allocKey);
@@ -2401,14 +2467,15 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
                                 SWIG_fail;
                             }
 
-                            res = SWIG_AsCharPtrAndSize(colInfo->Get(0), &v, &size, &alloc[j]);
+                            res = SWIG_AsCharPtrAndSize(colInfo->Get(context, 0).ToLocalChecked(),
+                                &v, &size, &alloc[j]);
                             if (!SWIG_IsOK(res)) {
                                 freeargContainerInfo($1, $2, $3, alloc);
                                 cleanString(name, allocKey);
                                 %variable_fail(res, "String", "Column name");
                             }
 
-                            if (!colInfo->Get(1)->IsInt32()) {
+                            if (!colInfo->Get(context, 1).ToLocalChecked()->IsInt32()) {
                                 cleanString(v, alloc[j]);
                                 freeargContainerInfo($1, $2, $3, alloc);
                                 cleanString(name, allocKey);
@@ -2416,10 +2483,12 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
                                 SWIG_fail;
                             }
                             $2[j].name = v;
-                            $2[j].type = (int) colInfo->Get(1)->Uint32Value(context).FromJust();
+                            $2[j].type = (int) colInfo->Get(context, 1).
+                                              ToLocalChecked()->Uint32Value(context).FromJust();
 
                             if ((int)colInfo->Length() == 3) {
-                                v8::Local<v8::Value> options = colInfo->Get(2);
+                                v8::Local<v8::Value> options = colInfo->Get(context, 2).
+                                                                   ToLocalChecked();
                                 if (!options->IsInt32()) {
                                     freeargContainerInfo($1, $2, $3, alloc);
                                     cleanString(name, allocKey);
@@ -2431,16 +2500,16 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
                         }
                     }
             } else if (strcmp(name, "type") == 0) {
-                if (!obj->Get(keys->Get(i))->IsInt32()) {
+                if (!value->IsInt32()) {
                     freeargContainerInfo($1, $2, $3, alloc);
                     sprintf(errorMsg, "Invalid value for property %s", name);
                     SWIG_V8_Raise(errorMsg);
                     cleanString(name, allocKey);
                     SWIG_fail;
                 }
-                $4 = obj->Get(keys->Get(i))->IntegerValue(context).FromJust();
+                $4 = value->IntegerValue(context).FromJust();
             } else if (strcmp(name, "rowKey") == 0) {
-                vbool = convertObjectToBool(obj->Get(keys->Get(i)), &boolVal);
+                vbool = convertObjectToBool(value, &boolVal);
                 if (!vbool) {
                     freeargContainerInfo($1, $2, $3, alloc);
                     sprintf(errorMsg, "Invalid value for property %s", name);
@@ -2450,7 +2519,7 @@ static void freeargContainerIndex(const char* column_name, const char* name) {
                 }
                 $5 = boolVal;
             } else if (strcmp(name, "expiration") == 0) {
-                 res = SWIG_ConvertPtr(obj->Get(keys->Get(i)), (void**)&expiration, $descriptor(griddb::ExpirationInfo*), 0 | 0 );
+                 res = SWIG_ConvertPtr(value, (void**)&expiration, $descriptor(griddb::ExpirationInfo*), 0 | 0 );
                  if (!SWIG_IsOK(res)) {
                      freeargContainerInfo($1, $2, $3, alloc);
                      sprintf(errorMsg, "Invalid value for property %s", name);
