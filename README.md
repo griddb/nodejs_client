@@ -100,7 +100,7 @@ Install SWIG as below.
 - Run commands below in cmd at SWIG folder:
 ```
     SET PATH=C:\Tools\bison\bison-win32.2.4.1.1\tools\native\bin;%PATH%
-    SET PCRE_ROOT=C:\Tools\\pcre\pcre.8.33.0.1\build\native
+    SET PCRE_ROOT=C:\Tools\pcre\pcre.8.33.0.1\build\native
     SET PCRE_PLATFORM=x64
     cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_INSTALL_PREFIX="%CD:\=/%/install2" -DCMAKE_C_FLAGS="/DPCRE_STATIC /MT" -DCMAKE_CXX_FLAGS="/DPCRE_STATIC /MT"  -DPCRE_INCLUDE_DIR=%PCRE_ROOT%/include -DPCRE_LIBRARY=%PCRE_ROOT%/lib/v110/%PCRE_PLATFORM%/Release/static/utf8/pcre8.lib .
     cmake --build . --config Release
